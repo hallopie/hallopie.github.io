@@ -135,7 +135,7 @@ section{padding:80px 0}
 .sobre .wrap{display:grid;grid-template-columns:.8fr 1.2fr;gap:50px;align-items:center}
 @media(max-width:860px){.sobre .wrap{grid-template-columns:1fr}}
 .ficha{padding:30px 26px}
-.ficha .foto{aspect-ratio:1/1;background:var(--piedra-3);border:3px solid var(--pergamino);outline:1px solid rgba(42,38,34,.4);display:grid;place-items:center;
+.ficha .foto{aspect-ratio:1/1;overflow:hidden;background:var(--piedra-3);border:3px solid var(--pergamino);outline:1px solid rgba(42,38,34,.4);display:grid;place-items:center;
   font-family:"Kalam",cursive;font-size:56px;color:var(--oro);margin-bottom:16px}
 .ficha dl{font-size:14px;font-family:"Courier Prime",monospace}
 .ficha dt{opacity:.6;text-transform:uppercase;letter-spacing:.08em;font-size:11px;margin-top:10px}
@@ -324,7 +324,7 @@ footer{padding:40px 0 50px;text-align:center;font-family:"Courier Prime",monospa
 <section class="sobre" id="hallopie" style="background:rgba(0,0,0,.12)">
   <div class="wrap">
     <div class="papel cinta chueco-1 ficha">
-      <div class="foto">H</div>
+      <div class="foto"><img src="hallopie.jpg" alt="Hallopie, fundador de Sótano Bajo" style="width:100%;height:100%;object-fit:cover;display:block"></div>
       <dl>
         <dt>Nombre</dt><dd>Alejandro Halley · Hallopie</dd>
         <dt>Cargo</dt><dd>Fundador y Director, Sótano Bajo</dd>
