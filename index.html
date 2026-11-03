@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sótano Bajo · IA, automatización y dashboards para negocios</title>
+<meta name="description" content="Sótano Bajo: cursos de IA, dashboards y apps a la medida para negocios, y producción audiovisual con IA. Por Hallopie, CDMX.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Courier+Prime:wght@400;700&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --piedra:#3A3630; --piedra-2:#2E2B26; --piedra-3:#4A453D;
+  --oro:#C9A227; --oxido:#B5651D; --agua:#5A8577; --pergamino:#EDE0C0;
+  --tinta:#2A2622; --rojo:#A8322A;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--piedra); color:var(--pergamino);
+  font-family:"Archivo",system-ui,sans-serif; font-size:17px; line-height:1.6;
+  background-image:
+    radial-gradient(ellipse at 20% 10%, rgba(201,162,39,.10), transparent 55%),
+    radial-gradient(ellipse at 85% 60%, rgba(90,133,119,.10), transparent 50%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .22 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+a{color:inherit}
+.wrap{max-width:1100px;margin:0 auto;padding:0 24px}
+.mano{font-family:"Kalam",cursive;font-weight:700;line-height:1.1}
+.mono{font-family:"Courier Prime",monospace}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:20;background:rgba(46,43,38,.92);backdrop-filter:blur(6px);border-bottom:1px dashed rgba(237,224,192,.18)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo .chapa{width:38px;height:38px;border:2px solid var(--oro);border-radius:4px;display:grid;place-items:center;
+  font-family:"Courier Prime",monospace;font-weight:700;color:var(--oro);font-size:15px;transform:rotate(-3deg)}
+.logo span{font-family:"Kalam",cursive;font-weight:700;font-size:24px}
+nav ul{display:flex;gap:22px;list-style:none;font-family:"Courier Prime",monospace;font-size:14px;text-transform:uppercase;letter-spacing:.06em}
+nav ul a{text-decoration:none;opacity:.8}
+nav ul a:hover{opacity:1;color:var(--oro)}
+@media(max-width:720px){nav ul{display:none}}
+
+/* PAPEL / RECORTES */
+.papel{background:var(--pergamino);color:var(--tinta);position:relative;
+  box-shadow:0 10px 24px rgba(0,0,0,.35),0 2px 4px rgba(0,0,0,.25);
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='2'/><feColorMatrix values='0 0 0 0 .35  0 0 0 0 .28  0 0 0 0 .18  0 0 0 .16 0'/></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>");
+}
+.cuadricula{background-image:
+  linear-gradient(rgba(58,54,48,.09) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(58,54,48,.09) 1px,transparent 1px),
+  url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='2'/><feColorMatrix values='0 0 0 0 .35  0 0 0 0 .28  0 0 0 0 .18  0 0 0 .16 0'/></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>");
+  background-size:22px 22px,22px 22px,auto}
+.cinta::before,.cinta::after{content:"";position:absolute;width:92px;height:26px;background:rgba(201,162,39,.55);
+  box-shadow:0 1px 2px rgba(0,0,0,.15);top:-12px}
+.cinta::before{left:18px;transform:rotate(-6deg)}
+.cinta::after{right:18px;transform:rotate(5deg)}
+.chueco-1{transform:rotate(-1.2deg)} .chueco-2{transform:rotate(.9deg)} .chueco-3{transform:rotate(-.6deg)}
+.borde-roto{clip-path:polygon(0 2%,6% 0,14% 1.5%,25% 0,38% 1%,52% 0,63% 1.6%,77% 0,88% 1.2%,100% 0,99% 22%,100% 48%,98.8% 74%,100% 100%,86% 98.6%,71% 100%,55% 98.8%,40% 100%,26% 98.5%,12% 100%,0 98.8%,1% 70%,0 44%,1.2% 20%)}
+
+.burbuja{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--rojo);color:#fff;
+  font-family:"Courier Prime",monospace;font-weight:700;font-size:15px;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25);flex:none}
+
+.btn{display:inline-flex;align-items:center;gap:10px;padding:13px 22px;border-radius:3px;text-decoration:none;
+  font-family:"Courier Prime",monospace;font-weight:700;font-size:15px;letter-spacing:.04em;text-transform:uppercase;transition:transform .15s}
+.btn:hover{transform:translateY(-2px) rotate(-.5deg)}
+.btn-oro{background:var(--oro);color:var(--tinta);box-shadow:3px 3px 0 var(--oxido)}
+.btn-linea{border:2px dashed var(--pergamino);color:var(--pergamino)}
+
+/* HERO */
+.hero{padding:80px 0 70px}
+.hero .wrap{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center}
+@media(max-width:860px){.hero .wrap{grid-template-columns:1fr}}
+.etiqueta{display:inline-block;font-family:"Courier Prime",monospace;font-size:13px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--oro);border:1px solid var(--oro);padding:4px 10px;transform:rotate(-1deg);margin-bottom:22px}
+.hero h1{font-size:clamp(44px,7vw,78px);margin-bottom:22px}
+.hero h1 em{font-style:normal;color:var(--oro);position:relative}
+.hero h1 em::after{content:"";position:absolute;left:-4px;right:-6px;bottom:4px;height:10px;background:rgba(181,101,29,.45);z-index:-1;transform:rotate(-1.5deg)}
+.hero p.lead{font-size:20px;max-width:540px;opacity:.92;margin-bottom:32px}
+.hero .ctas{display:flex;flex-wrap:wrap;gap:14px}
+
+/* ELEVADOR */
+.elevador{padding:30px 26px 26px}
+.elevador h3{font-size:26px;margin-bottom:6px}
+.elevador .sub{font-family:"Courier Prime",monospace;font-size:13px;opacity:.7;margin-bottom:18px}
+.piso{display:flex;align-items:center;gap:14px;padding:13px 0;border-top:1.5px dashed rgba(42,38,34,.3)}
+.piso:first-of-type{border-top:none}
+.piso b{font-family:"Kalam",cursive;font-size:20px;display:block;line-height:1.1}
+.piso small{font-size:14px;opacity:.75}
+.piso .nivel{font-family:"Courier Prime",monospace;font-weight:700;font-size:13px;color:var(--oxido);margin-left:auto;white-space:nowrap}
+
+/* SECCIONES */
+section{padding:80px 0}
+.titulo-sec{display:flex;align-items:baseline;gap:16px;margin-bottom:14px}
+.titulo-sec h2{font-size:clamp(34px,5vw,52px)}
+.titulo-sec .mono{color:var(--oro);font-size:14px;letter-spacing:.1em}
+.intro-sec{max-width:640px;opacity:.88;margin-bottom:44px;font-size:18px}
+
+.niveles{display:grid;grid-template-columns:repeat(3,1fr);gap:30px}
+@media(max-width:900px){.niveles{grid-template-columns:1fr}}
+.nivel-card{padding:34px 26px 28px}
+.nivel-card .cab{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.nivel-card .cab .mono{font-size:13px;color:var(--oxido);font-weight:700;letter-spacing:.08em}
+.nivel-card h3{font-size:30px;margin-bottom:10px}
+.nivel-card p{font-size:16px;margin-bottom:14px}
+.nivel-card ul{list-style:none;font-size:15px}
+.nivel-card li{padding:6px 0 6px 22px;position:relative;border-top:1px dotted rgba(42,38,34,.25)}
+.nivel-card li::before{content:"✕";position:absolute;left:0;color:var(--rojo);font-weight:700;font-size:13px;top:8px}
+
+/* CASOS */
+.casos{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+@media(max-width:900px){.casos{grid-template-columns:1fr}}
+.caso{padding:28px 24px;background:var(--piedra-3);border:1px solid rgba(237,224,192,.14);position:relative}
+.caso .giro{font-family:"Courier Prime",monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--agua);background:rgba(90,133,119,.15);padding:3px 8px;display:inline-block;margin-bottom:12px}
+.caso h3{font-size:24px;margin-bottom:10px;color:var(--oro)}
+.caso p{font-size:15px;opacity:.88}
+.caso .antes{margin-top:16px;padding-top:14px;border-top:1px dashed rgba(237,224,192,.2);font-size:14px}
+.caso .antes span{font-family:"Courier Prime",monospace;color:var(--oxido);font-weight:700}
+
+/* GRAFICA dibujada */
+.grafica-wrap{margin-top:46px;padding:30px 28px 22px;max-width:760px;margin-left:auto;margin-right:auto}
+.grafica-wrap h4{font-family:"Kalam",cursive;font-size:24px;margin-bottom:4px}
+.grafica-wrap .nota{font-family:"Courier Prime",monospace;font-size:12px;opacity:.65;margin-bottom:10px}
+
+/* PROCESO */
+.pasos{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;counter-reset:p}
+@media(max-width:900px){.pasos{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.pasos{grid-template-columns:1fr}}
+.paso{padding:24px 20px}
+.paso .burbuja{margin-bottom:12px}
+.paso h3{font-size:22px;margin-bottom:6px}
+.paso p{font-size:15px}
+
+/* SOBRE */
+.sobre .wrap{display:grid;grid-template-columns:.8fr 1.2fr;gap:50px;align-items:center}
+@media(max-width:860px){.sobre .wrap{grid-template-columns:1fr}}
+.ficha{padding:30px 26px}
+.ficha .foto{aspect-ratio:1/1;background:var(--piedra-3);border:3px solid var(--pergamino);outline:1px solid rgba(42,38,34,.4);display:grid;place-items:center;
+  font-family:"Kalam",cursive;font-size:56px;color:var(--oro);margin-bottom:16px}
+.ficha dl{font-size:14px;font-family:"Courier Prime",monospace}
+.ficha dt{opacity:.6;text-transform:uppercase;letter-spacing:.08em;font-size:11px;margin-top:10px}
+.sobre h2{font-size:clamp(34px,5vw,50px);margin-bottom:18px}
+.sobre p{margin-bottom:16px;opacity:.9}
+.firma{font-family:"Kalam",cursive;font-size:30px;color:var(--oro);transform:rotate(-2deg);display:inline-block;margin-top:6px}
+
+/* CONTACTO */
+.contacto{text-align:center}
+.contacto .papel{max-width:780px;margin:0 auto;padding:54px 36px 46px}
+.contacto h2{font-size:clamp(36px,6vw,58px);margin-bottom:14px}
+.contacto p{font-size:18px;max-width:520px;margin:0 auto 28px}
+.contacto .datos{font-family:"Courier Prime",monospace;font-size:15px;margin-top:22px;opacity:.8}
+.redes{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:40px}
+.redes a{font-family:"Courier Prime",monospace;font-size:14px;text-decoration:none;padding:8px 14px;border:1px solid rgba(237,224,192,.3);border-radius:2px}
+.redes a:hover{border-color:var(--oro);color:var(--oro)}
+
+footer{padding:40px 0 50px;text-align:center;font-family:"Courier Prime",monospace;font-size:13px;opacity:.6}
+.wa-flota{position:fixed;right:20px;bottom:20px;z-index:30;width:58px;height:58px;border-radius:50%;background:var(--oro);display:grid;place-items:center;
+  box-shadow:3px 3px 0 var(--oxido),0 6px 16px rgba(0,0,0,.35);text-decoration:none}
+.wa-flota svg{width:28px;height:28px}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="mano"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="3.2"/></filter>
+    <pattern id="rayado-oro" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(38)"><line x1="0" y1="0" x2="0" y2="6" stroke="#8a6c12" stroke-width="1.2" opacity=".55"/></pattern>
+    <pattern id="rayado-agua" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-40)"><line x1="0" y1="0" x2="0" y2="6" stroke="#2f4f45" stroke-width="1.2" opacity=".5"/></pattern>
+    <radialGradient id="g-oro" cx="50%" cy="85%" r="80%"><stop offset="0" stop-color="#9c7a12"/><stop offset="1" stop-color="#E2C25A"/></radialGradient>
+    <radialGradient id="g-agua" cx="50%" cy="85%" r="80%"><stop offset="0" stop-color="#3d6155"/><stop offset="1" stop-color="#86ab9e"/></radialGradient>
+  </defs>
+</svg>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="#inicio"><div class="chapa">SB</div><span>Sótano Bajo</span></a>
+    <ul>
+      <li><a href="#niveles">Qué hacemos</a></li>
+      <li><a href="#casos">Casos</a></li>
+      <li><a href="#como">Cómo trabajamos</a></li>
+      <li><a href="#hallopie">Hallopie</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero" id="inicio">
+  <div class="wrap">
+    <div>
+      <div class="etiqueta">IA · automatización · dashboards · CDMX</div>
+      <h1 class="mano">Bajamos la IA a <em>tu negocio</em>.</h1>
+      <p class="lead">En el sótano armamos lo que a otros les sobra: herramientas de IA, tableros y apps a la medida que le quitan horas de trabajo repetitivo a tu equipo. Y te enseñamos a usarlas.</p>
+      <div class="ctas">
+        <a class="btn btn-oro" href="https://wa.me/525670146203?text=Hola%20Hallopie%2C%20quiero%20saber%20m%C3%A1s%20de%20S%C3%B3tano%20Bajo" target="_blank" rel="noopener">Escríbeme por WhatsApp</a>
+        <a class="btn btn-linea" href="#niveles">Ver qué hacemos</a>
+      </div>
+    </div>
+
+    <div class="papel cuadricula cinta chueco-2 elevador">
+      <h3 class="mano">¿A qué piso vas?</h3>
+      <div class="sub">Directorio del elevador · bajando</div>
+      <a class="piso" href="#niveles" style="text-decoration:none;color:inherit">
+        <span class="burbuja">1</span><div><b>Aprender IA</b><small>Cursos y asesoría 1 a 1</small></div><span class="nivel">SÓTANO 1</span>
+      </a>
+      <a class="piso" href="#niveles" style="text-decoration:none;color:inherit">
+        <span class="burbuja">2</span><div><b>Automatizar mi negocio</b><small>Dashboards y apps a la medida</small></div><span class="nivel">SÓTANO 2</span>
+      </a>
+      <a class="piso" href="#niveles" style="text-decoration:none;color:inherit">
+        <span class="burbuja">3</span><div><b>Contar mi historia</b><small>Producción audiovisual con IA</small></div><span class="nivel">SÓTANO 3</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<section id="niveles">
+  <div class="wrap">
+    <div class="titulo-sec"><h2 class="mano">Qué hacemos</h2><span class="mono">— TRES NIVELES</span></div>
+    <p class="intro-sec">La IA es una herramienta, no un truco de magia. Lo que hacemos es ponerla a trabajar junto con tu gente, en lo que de verdad te quita tiempo.</p>
+
+    <div class="niveles">
+      <article class="papel cinta chueco-1 nivel-card">
+        <div class="cab"><span class="burbuja">1</span><span class="mono">SÓTANO 1</span></div>
+        <h3 class="mano">Cursos y asesoría</h3>
+        <p>Desde lo básico hasta tener tu propio asistente o agente de IA trabajando para ti.</p>
+        <ul>
+          <li>Cursos de IA en línea, a tu ritmo</li>
+          <li>Asesoría 1 a 1 de IA agéntica, personal o para tu negocio</li>
+          <li>Talleres para equipos de trabajo</li>
+        </ul>
+      </article>
+      <article class="papel cinta chueco-2 nivel-card">
+        <div class="cab"><span class="burbuja">2</span><span class="mono">SÓTANO 2</span></div>
+        <h3 class="mano">Soluciones para empresas</h3>
+        <p>Tableros y apps cerradas, hechas para tu negocio y conectadas a lo que ya usas.</p>
+        <ul>
+          <li>Dashboards de ventas, gastos y resultados al día</li>
+          <li>Captura por foto: tickets, inventario, notas</li>
+          <li>Cierres de caja, nómina y pendientes por mensaje</li>
+          <li>Automatización de correos, facturas y reportes</li>
+        </ul>
+      </article>
+      <article class="papel cinta chueco-3 nivel-card">
+        <div class="cab"><span class="burbuja">3</span><span class="mono">SÓTANO 3</span></div>
+        <h3 class="mano">Producción audiovisual</h3>
+        <p>Más de 15 años haciendo publicidad, ahora con IA para producir más rápido sin perder la dirección creativa.</p>
+        <ul>
+          <li>Videos para redes y campañas</li>
+          <li>Explicativos y motion graphics</li>
+          <li>Desarrollo de historia, storyboard y animación con IA</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="casos" style="background:rgba(0,0,0,.12)">
+  <div class="wrap">
+    <div class="titulo-sec"><h2 class="mano">Ya está funcionando</h2><span class="mono">— CASOS REALES</span></div>
+    <p class="intro-sec">Negocios de verdad, con problemas de todos los días. Sin nombres, porque sus datos son suyos.</p>
+
+    <div class="casos">
+      <div class="caso">
+        <span class="giro">Restaurante · 2 sucursales</span>
+        <h3 class="mano">La caja cuadra sola</h3>
+        <p>Las ventas del punto de venta, los gastos y la nómina llegan solos a un tablero. Las compras se capturan con una foto del ticket y el cierre de caja se hace desde el celular.</p>
+        <p class="antes"><span>ANTES:</span> varios Excel por sucursal y días para saber cómo iba el mes.</p>
+      </div>
+      <div class="caso">
+        <span class="giro">Óptica · varias sucursales</span>
+        <h3 class="mano">Inventario con una foto</h3>
+        <p>Cada armazón se registra tomándole una foto. Además hay punto de venta, seguimiento de lentes en laboratorio, asistencia del personal y un tablero para el dueño.</p>
+        <p class="antes"><span>ANTES:</span> inventario en papel y pedidos que se perdían entre el laboratorio y la tienda.</p>
+      </div>
+      <div class="caso">
+        <span class="giro">Servicio a domicilio</span>
+        <h3 class="mano">Órdenes sin papelitos</h3>
+        <p>Órdenes de servicio, recolección y entrega organizadas en un solo lugar, con avisos para el cliente en cada paso.</p>
+        <p class="antes"><span>ANTES:</span> todo por WhatsApp y de memoria.</p>
+      </div>
+    </div>
+
+    <div class="papel cuadricula cinta chueco-3 grafica-wrap">
+      <h4>Horas a la semana en tareas repetitivas</h4>
+      <div class="nota">EJEMPLO ILUSTRATIVO · cada negocio es distinto</div>
+      <svg viewBox="0 0 640 230" width="100%" role="img" aria-label="Gráfica ilustrativa: antes y después de automatizar">
+        <g filter="url(#mano)" font-family="Courier Prime, monospace" font-size="13" fill="#2A2622">
+          <line x1="70" y1="190" x2="610" y2="192" stroke="#2A2622" stroke-width="2"/>
+          <line x1="70" y1="190" x2="68" y2="20" stroke="#2A2622" stroke-width="2"/>
+          <!-- Captura -->
+          <rect x="100" y="50" width="56" height="140" fill="url(#g-oro)"/><rect x="100" y="50" width="56" height="140" fill="url(#rayado-oro)" stroke="#2A2622" stroke-width="1.6"/>
+          <rect x="164" y="160" width="56" height="30" fill="url(#g-agua)"/><rect x="164" y="160" width="56" height="30" fill="url(#rayado-agua)" stroke="#2A2622" stroke-width="1.6"/>
+          <text x="160" y="212" text-anchor="middle">Captura</text>
+          <!-- Reportes -->
+          <rect x="280" y="80" width="56" height="110" fill="url(#g-oro)"/><rect x="280" y="80" width="56" height="110" fill="url(#rayado-oro)" stroke="#2A2622" stroke-width="1.6"/>
+          <rect x="344" y="170" width="56" height="20" fill="url(#g-agua)"/><rect x="344" y="170" width="56" height="20" fill="url(#rayado-agua)" stroke="#2A2622" stroke-width="1.6"/>
+          <text x="340" y="212" text-anchor="middle">Reportes</text>
+          <!-- Cuadres -->
+          <rect x="460" y="100" width="56" height="90" fill="url(#g-oro)"/><rect x="460" y="100" width="56" height="90" fill="url(#rayado-oro)" stroke="#2A2622" stroke-width="1.6"/>
+          <rect x="524" y="165" width="56" height="25" fill="url(#g-agua)"/><rect x="524" y="165" width="56" height="25" fill="url(#rayado-agua)" stroke="#2A2622" stroke-width="1.6"/>
+          <text x="520" y="212" text-anchor="middle">Cuadres</text>
+        </g>
+        <g font-family="Courier Prime, monospace" font-size="13" fill="#2A2622">
+          <circle cx="430" cy="30" r="11" fill="#A8322A"/><text x="430" y="35" text-anchor="middle" fill="#fff" font-weight="700">1</text><text x="448" y="35">A mano</text>
+          <circle cx="520" cy="30" r="11" fill="#A8322A"/><text x="520" y="35" text-anchor="middle" fill="#fff" font-weight="700">2</text><text x="538" y="35">Con IA</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section id="como">
+  <div class="wrap">
+    <div class="titulo-sec"><h2 class="mano">Cómo trabajamos</h2><span class="mono">— EL MAPA</span></div>
+    <p class="intro-sec">No te vendemos un software y te dejamos solo. Lo armamos contigo, paso a paso.</p>
+    <div class="pasos">
+      <div class="papel paso chueco-1"><span class="burbuja">1</span><h3 class="mano">Platicamos</h3><p>Nos cuentas qué te quita tiempo y cómo trabajas hoy, con tus Excel y todo.</p></div>
+      <div class="papel paso chueco-2"><span class="burbuja">2</span><h3 class="mano">Demo</h3><p>Te enseñamos una primera versión con tus procesos antes de comprometerte.</p></div>
+      <div class="papel paso chueco-3"><span class="burbuja">3</span><h3 class="mano">Lo conectamos</h3><p>Lo ligamos a lo que ya usas: punto de venta, correo, WhatsApp, hojas de cálculo.</p></div>
+      <div class="papel paso chueco-1"><span class="burbuja">4</span><h3 class="mano">Te acompañamos</h3><p>Capacitamos a tu equipo y lo ajustamos mientras lo usan de verdad.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sobre" id="hallopie" style="background:rgba(0,0,0,.12)">
+  <div class="wrap">
+    <div class="papel cinta chueco-1 ficha">
+      <div class="foto">H</div>
+      <dl>
+        <dt>Nombre</dt><dd>Alejandro Halley · Hallopie</dd>
+        <dt>Cargo</dt><dd>Fundador y Director, Sótano Bajo</dd>
+        <dt>Base</dt><dd>Ciudad de México</dd>
+      </dl>
+    </div>
+    <div>
+      <h2 class="mano">Soy Hallopie.</h2>
+      <p>Me formé en cine y pasé más de 15 años en publicidad y producción audiovisual: edité, postproduje y dirigí campañas para marcas como Home Depot, Telcel y PepsiCo.</p>
+      <p>Hoy uso la IA para lo mismo que hacía antes con una cámara: resolver problemas reales con lo que hay a la mano. Sótano Bajo es ese espacio donde se agarra lo que otros ya no usan y se convierte en algo nuevo.</p>
+      <p>Cada semana cuento lo nuevo en IA y cómo usarlo de verdad. Sin hype, con ejemplos.</p>
+      <span class="firma">— Hallopie</span>
+    </div>
+  </div>
+</section>
+
+<section class="contacto" id="contacto">
+  <div class="wrap">
+    <div class="papel cuadricula cinta chueco-2">
+      <h2 class="mano">¿Bajamos?</h2>
+      <p>Cuéntame qué te quita tiempo en tu negocio y vemos si la IA te puede ayudar. La primera plática no cuesta.</p>
+      <a class="btn btn-oro" href="https://wa.me/525670146203?text=Hola%20Hallopie%2C%20quiero%20saber%20m%C3%A1s%20de%20S%C3%B3tano%20Bajo" target="_blank" rel="noopener">WhatsApp · 56 7014 6203</a>
+      <div class="datos">ahalleyg@gmail.com</div>
+    </div>
+    <div class="redes">
+      <a href="https://hallopie.substack.com" target="_blank" rel="noopener">Substack</a>
+      <a href="https://www.instagram.com/hallopie_sotanobajo" target="_blank" rel="noopener">Instagram</a>
+      <a href="https://www.tiktok.com/@hallopie_sotanobajo" target="_blank" rel="noopener">TikTok</a>
+      <a href="https://www.youtube.com/@hallopie" target="_blank" rel="noopener">YouTube</a>
+      <a href="https://x.com/hallopie_sotano" target="_blank" rel="noopener">X</a>
+      <a href="https://www.facebook.com/profile.php?id=61595909232128" target="_blank" rel="noopener">Facebook</a>
+    </div>
+  </div>
+</section>
+
+<footer>Hecho a mano en el sótano · CDMX · © 2026 Sótano Bajo</footer>
+
+<a class="wa-flota" href="https://wa.me/525670146203" target="_blank" rel="noopener" aria-label="WhatsApp">
+  <svg viewBox="0 0 24 24" fill="#2A2622"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.2.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"/></svg>
+</a>
+</body>
+</html>
