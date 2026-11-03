@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Café La Esquina · Dashboard (demo)</title>
+<style>
+:root{
+  --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#6f6d67; --grid:#e1e0d9; --axis:#c3c2b7;
+  --good:#006300; --bad:#b42323; --warn-bg:#fff4d6; --warn-ink:#6b4b00; --accent:#2a78d6;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s7:#4a3aa7;
+}
+@media (prefers-color-scheme:dark){:root{
+  --page:#0d0d0d; --surface:#1a1a19; --ink:#fff; --ink2:#c3c2b7; --muted:#a09f97; --grid:#2c2c2a; --axis:#383835;
+  --good:#3ecf5a; --bad:#ff7a7a; --warn-bg:#3a2f0d; --warn-ink:#f3d58a; --accent:#3987e5;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s7:#9085e9; color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-inline:16px;padding-block:0 40px}
+.wrap{max-width:1120px;margin:0 auto}
+header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;padding-block:20px 12px}
+h1{font:700 22px/1.2 system-ui,sans-serif;margin:0;letter-spacing:-.01em}
+.sub{color:var(--ink2);margin-top:2px}
+.bar{position:sticky;top:0;z-index:5;background:var(--page);display:flex;flex-wrap:wrap;gap:8px 16px;padding-block:8px;border-bottom:1px solid var(--grid)}
+.seg{display:inline-flex;max-width:100%;overflow-x:auto;border:1px solid var(--axis);border-radius:8px}
+.seg button{white-space:nowrap;flex:none;background:transparent;color:var(--ink2);border:0;padding:6px 11px;font:inherit;cursor:pointer;min-height:34px}
+.seg button+button{border-left:1px solid var(--axis)}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--page);font-weight:600}
+h2{font:700 13px/1 system-ui;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);margin:32px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--grid)}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+.kpis{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.card{background:var(--surface);border:1px solid var(--grid);border-radius:10px;padding:14px;min-width:0}
+.card h3{font:600 13px/1.3 system-ui;margin:0 0 2px}
+.card .note{color:var(--muted);font-size:12px;margin:0 0 8px}
+.kpi .v{font:700 24px/1.15 system-ui;font-variant-numeric:tabular-nums;margin-top:4px}
+.kpi .l{color:var(--ink2);font-size:12px}
+.kpi .d{font-size:12px;color:var(--muted);margin-top:2px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--grid);font-size:13px}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--ink2);font-weight:600;font-size:12px}
+tr.tot td{font-weight:700;border-top:1px solid var(--axis)}
+.scroll{overflow-x:auto}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink2);margin:4px 0 6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+svg{display:block;max-width:100%;overflow:visible}
+svg text{fill:var(--muted);font:11px system-ui}
+.hb{display:grid;grid-template-columns:minmax(90px,38%) 1fr auto;gap:8px;align-items:center;padding:3px 0;font-size:13px}
+.hb .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb .b{height:10px;position:relative}
+.hb .b span{position:absolute;left:0;top:0;bottom:0;border-radius:0 4px 4px 0;background:var(--s1);min-width:2px}
+.hb .n{font-variant-numeric:tabular-nums;color:var(--ink2);text-align:right;white-space:nowrap}
+.banner{background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;padding:10px 12px;margin:12px 0;font-size:13px}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+.chip{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:600}
+.chip.ok{background:color-mix(in srgb,var(--good) 15%,transparent);color:var(--good)}
+.chip.bad{background:color-mix(in srgb,var(--bad) 15%,transparent);color:var(--bad)}
+.chip.mid{background:var(--warn-bg);color:var(--warn-ink)}
+#tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--page);padding:6px 9px;border-radius:6px;font-size:12px;line-height:1.35;z-index:50;display:none;max-width:260px}
+footer{margin-top:36px;color:var(--muted);font-size:12px}
+@media (max-width:520px){h1{font-size:19px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div><h1>Café La Esquina</h1><div class="sub">Tablero de dirección · 2 sucursales</div></div>
+  <div class="sub" id="cut"></div>
+</header>
+<div class="banner"><b>Demo con datos ficticios.</b> Este negocio no existe: los números son inventados para mostrar cómo se ve un tablero hecho por Sótano Bajo.</div>
+<div class="bar">
+  <div class="seg" id="segSuc"></div>
+  <div class="seg" id="segPer"></div>
+</div>
+<main>
+  <h2>Resumen</h2>
+  <div class="kpis" id="kpis"></div>
+
+  <h2>Ventas</h2>
+  <div class="grid">
+    <div class="card" style="grid-column:1/-1"><h3>Ventas por día</h3><p class="note">Barras apiladas por sucursal · pasa el dedo o el mouse para ver el detalle</p><div class="legend" id="legDia"></div><div id="chDia"></div></div>
+    <div class="card"><h3>Ventas por forma de pago</h3><p class="note">Del periodo seleccionado</p><div id="chPago"></div></div>
+    <div class="card"><h3>Lo más vendido</h3><p class="note">Top 8 productos por importe</p><div id="chTop"></div></div>
+  </div>
+
+  <h2>Dinero</h2>
+  <div class="grid">
+    <div class="card"><h3>Estado de resultados</h3><p class="note">Ventas menos costos y gastos del periodo</p><div class="scroll" id="tbPL"></div></div>
+    <div class="card"><h3>Gastos por categoría</h3><p class="note">Capturados con foto del ticket</p><div id="chGas"></div></div>
+  </div>
+
+  <h2>Operación</h2>
+  <div class="grid">
+    <div class="card"><h3>Cierres de caja</h3><p class="note">Últimos 7 días · se cuadran solos contra el punto de venta</p><div class="scroll" id="tbCaja"></div></div>
+    <div class="card"><h3>Inventario por surtir</h3><p class="note">Productos por debajo del mínimo</p><div class="scroll" id="tbInv"></div></div>
+  </div>
+</main>
+<footer>Hecho por Sótano Bajo · Datos de ejemplo · <a href="../" style="color:inherit">hallopie.github.io</a></footer>
+</div>
+<div id="tip"></div>
+<script>
+// ---------- datos ficticios (semilla fija: siempre salen iguales) ----------
+let seed=7; const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646};
+const SUC=['Roma','Coyoacán'], COL=['var(--s1)','var(--s2)'];
+const PROD=[['Latte',68,22],['Americano',45,15],['Capuchino',62,14],['Chilaquiles',145,12],['Croissant',48,8],['Molletes',110,7],['Frappé',79,6],['Pan de elote',55,4],['Matcha latte',75,4],['Bagel de salmón',165,3.5],['Concha',32,2.5],['Té chai',60,2]];
+const PAGOS=['Tarjeta','Efectivo','Apps de entrega','Transferencia'];
+const HOY=new Date(2026,10,2); // fecha fija de la demo
+const DIAS=[];
+for(let i=59;i>=0;i--){
+  const d=new Date(HOY); d.setDate(d.getDate()-i);
+  const dow=d.getDay(), finde=(dow===0||dow===6)?1.35:1, trend=1+(59-i)*0.003;
+  const suc=SUC.map((s,k)=>{
+    const base=(k===0?24500:17800)*finde*trend*(0.85+rnd()*0.3);
+    const prods=PROD.map(([n,p,w])=>({n,imp:Math.round(base*(w/100)*(0.85+rnd()*0.3)/p)*p}));
+    const tot=prods.reduce((a,b)=>a+b.imp,0);
+    const tickets=Math.round(tot/(118+rnd()*30));
+    const pago=[.52,.27,.15,.06].map(x=>x*(0.9+rnd()*0.2));const ps=pago.reduce((a,b)=>a+b,0);
+    return {tot,tickets,prods,pago:pago.map(x=>tot*x/ps)};
+  });
+  DIAS.push({d,suc});
+}
+const GASTOS=[['Insumos (café, leche, pan)',.31],['Nómina',.22],['Renta',.09],['Servicios (luz, gas, agua)',.04],['Empaques y limpieza',.03],['Mantenimiento',.015],['Apps de entrega (comisión)',.025]];
+
+// ---------- estado ----------
+let sucSel=-1, per=30;
+const peso=n=>new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0}).format(Math.round(n||0));
+const pct=n=>(n>=0?'+':'')+(n*100).toFixed(1)+'%';
+const fdia=d=>d.toLocaleDateString('es-MX',{day:'numeric',month:'short'});
+const $=s=>document.querySelector(s);
+const tip=$('#tip');
+function showTip(e,html){tip.innerHTML=html;tip.style.display='block';const x=Math.min(e.clientX+12,innerWidth-270);tip.style.left=x+'px';tip.style.top=(e.clientY+14)+'px'}
+function hideTip(){tip.style.display='none'}
+
+function seg(el,opts,get,set){el.innerHTML='';opts.forEach(([v,l])=>{const b=document.createElement('button');b.textContent=l;b.setAttribute('aria-pressed',get()===v);b.onclick=()=>{set(v);render()};el.appendChild(b)})}
+
+function slice(n,off=0){return DIAS.slice(DIAS.length-n-off,DIAS.length-off)}
+function sucIdx(){return sucSel<0?[0,1]:[sucSel]}
+function sum(days,f){return days.reduce((a,d)=>a+sucIdx().reduce((b,k)=>b+f(d.suc[k]),0),0)}
+
+function render(){
+  seg($('#segSuc'),[[-1,'Todas'],[0,'Roma'],[1,'Coyoacán']],()=>sucSel,v=>sucSel=v);
+  seg($('#segPer'),[[7,'7 días'],[30,'30 días']],()=>per,v=>per=v);
+  const cur=slice(per), prev=slice(per,per);
+  $('#cut').textContent='Corte: '+HOY.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'});
+  const v=sum(cur,s=>s.tot), vp=sum(prev,s=>s.tot), t=sum(cur,s=>s.tickets), tp=sum(prev,s=>s.tickets);
+  const g=GASTOS.reduce((a,[,x])=>a+x,0)*v, util=v-g;
+  const k=[['Ventas',peso(v),pct(v/vp-1)+' vs periodo anterior',v>=vp],['Tickets',t.toLocaleString('es-MX'),pct(t/tp-1)+' vs periodo anterior',t>=tp],['Ticket promedio',peso(v/t),'por cuenta',null],['Gastos',peso(g),(g/v*100).toFixed(0)+'% de las ventas',null],['Utilidad estimada',peso(util),'margen '+(util/v*100).toFixed(1)+'%',util>0]];
+  $('#kpis').innerHTML=k.map(([l,val,d,ok])=>`<div class="card kpi"><div class="l">${l}</div><div class="v">${val}</div><div class="d ${ok===null?'':ok?'pos':'neg'}">${d}</div></div>`).join('');
+
+  // ventas por día (barras apiladas)
+  const W=1000,H=240,P={l:52,r:8,t:10,b:26}, n=cur.length, bw=(W-P.l-P.r)/n;
+  const max=Math.max(...cur.map(d=>sucIdx().reduce((a,k)=>a+d.suc[k].tot,0)))*1.1;
+  const y=v=>P.t+(H-P.t-P.b)*(1-v/max);
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%">`;
+  for(let i=0;i<=4;i++){const val=max*i/4;s+=`<line x1="${P.l}" x2="${W-P.r}" y1="${y(val)}" y2="${y(val)}" stroke="var(--grid)"/><text x="${P.l-6}" y="${y(val)+4}" text-anchor="end">${Math.round(val/1000)}k</text>`}
+  cur.forEach((d,i)=>{let acc=0;const x=P.l+i*bw+bw*0.12,w=bw*0.76;
+    sucIdx().forEach(k=>{const v=d.suc[k].tot;s+=`<rect x="${x}" y="${y(acc+v)}" width="${w}" height="${y(acc)-y(acc+v)}" fill="${COL[k]}" rx="1.5"/>`;acc+=v});
+    s+=`<rect x="${P.l+i*bw}" y="${P.t}" width="${bw}" height="${H-P.t-P.b}" fill="transparent" data-i="${i}" class="hit"/>`;
+    if(n<=7||i%5===0||i===n-1)s+=`<text x="${x+w/2}" y="${H-8}" text-anchor="middle">${fdia(d.d)}</text>`});
+  s+='</svg>';$('#chDia').innerHTML=s;
+  $('#legDia').innerHTML=sucIdx().map(k=>`<span><i style="background:${COL[k]}"></i>${SUC[k]}</span>`).join('');
+  $('#chDia').querySelectorAll('.hit').forEach(r=>{r.onmousemove=e=>{const d=cur[+r.dataset.i];showTip(e,`<b>${d.d.toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short'})}</b><br>`+sucIdx().map(k=>`${SUC[k]}: ${peso(d.suc[k].tot)}`).join('<br>'))};r.onmouseleave=hideTip;r.ontouchstart=e=>{r.onmousemove(e.touches[0])}});
+
+  // pagos
+  const pg=PAGOS.map((p,j)=>[p,sum(cur,s=>s.pago[j])]);
+  hbars('#chPago',pg,['var(--s1)','var(--s3)','var(--s2)','var(--s7)']);
+  // top productos
+  const tp2=PROD.map(([nm],j)=>[nm,sum(cur,s=>s.prods[j].imp)]).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  hbars('#chTop',tp2);
+  // gastos
+  hbars('#chGas',GASTOS.map(([nm,x])=>[nm,x*v]).sort((a,b)=>b[1]-a[1]),Array(7).fill('var(--s2)'));
+  // P&L
+  const ins=GASTOS[0][1]*v, op=g-ins;
+  $('#tbPL').innerHTML=`<table><tr><th>Concepto</th><th>Importe</th><th>% ventas</th></tr>
+   <tr><td>Ventas</td><td>${peso(v)}</td><td>100%</td></tr>
+   <tr><td>Costo de insumos</td><td class="neg">−${peso(ins)}</td><td>${(ins/v*100).toFixed(1)}%</td></tr>
+   <tr class="tot"><td>Utilidad bruta</td><td>${peso(v-ins)}</td><td>${((v-ins)/v*100).toFixed(1)}%</td></tr>
+   <tr><td>Gastos de operación</td><td class="neg">−${peso(op)}</td><td>${(op/v*100).toFixed(1)}%</td></tr>
+   <tr class="tot"><td>Utilidad de operación</td><td class="${util>0?'pos':'neg'}">${peso(util)}</td><td>${(util/v*100).toFixed(1)}%</td></tr></table>`;
+  // caja
+  let seed2=11;const r2=()=>{seed2=(seed2*16807)%2147483647;return (seed2-1)/2147483646};
+  const rows=[];slice(7).slice().reverse().forEach(d=>sucIdx().forEach(k=>{const ef=d.suc[k].pago[1];const r=r2();const dif=r<.72?0:r<.88?-Math.round(20+r2()*180):Math.round(10+r2()*90);rows.push([fdia(d.d),SUC[k],ef,dif])}));
+  $('#tbCaja').innerHTML=`<table><tr><th>Día</th><th>Sucursal</th><th>Efectivo</th><th>Diferencia</th><th>Estado</th></tr>`+rows.map(([dd,sc,ef,df])=>`<tr><td>${dd}</td><td style="text-align:left">${sc}</td><td>${peso(ef)}</td><td class="${df<0?'neg':''}">${df===0?'—':peso(df)}</td><td>${df===0?'<span class="chip ok">Cuadra</span>':df<0?'<span class="chip bad">Faltante</span>':'<span class="chip mid">Sobrante</span>'}</td></tr>`).join('')+'</table>';
+  // inventario
+  const inv=[['Café en grano (kg)','Roma',3,8],['Leche entera (L)','Coyoacán',12,30],['Vasos 12 oz','Roma',140,300],['Matcha (kg)','Coyoacán',0.4,1],['Croissant congelado (pz)','Roma',18,40],['Salmón (kg)','Coyoacán',0.8,2]].filter(r=>sucSel<0||r[1]===SUC[sucSel]);
+  $('#tbInv').innerHTML=`<table><tr><th>Producto</th><th>Sucursal</th><th>Hay</th><th>Mínimo</th></tr>`+inv.map(([p,sc,h,m])=>`<tr><td>${p}</td><td style="text-align:left">${sc}</td><td class="neg">${h}</td><td>${m}</td></tr>`).join('')+'</table>';
+}
+function hbars(sel,data,cols){const mx=Math.max(...data.map(d=>d[1]));$(sel).innerHTML=data.map(([t,v],i)=>`<div class="hb"><span class="t" title="${t}">${t}</span><span class="b"><span style="width:${v/mx*100}%;${cols?'background:'+cols[i%cols.length]:''}"></span></span><span class="n">${peso(v)}</span></div>`).join('')}
+render();
+</script>
+</body>
+</html>
