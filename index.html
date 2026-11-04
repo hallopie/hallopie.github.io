@@ -324,7 +324,7 @@ footer{padding:40px 0 50px;text-align:center;font-family:"Courier Prime",monospa
     <div class="titulo-sec"><h2 class="mano">Detrás del sótano</h2><span class="mono">— BITÁCORA</span></div>
     <p class="intro-sec">Cada miércoles cuento un caso que armamos: el problema, las piezas y cómo quedó. Sin nombres de clientes y con datos de ejemplo.</p>
     <div class="bitacora" id="lista-casos"><div class="vacia">El primer caso sale el miércoles 4 de noviembre.</div></div>
-    <p style="margin-top:28px"><a class="btn btn-linea" href="https://hallopie.substack.com" target="_blank" rel="noopener">Leer todo en Substack</a></p>
+    <p style="margin-top:28px"><a class="btn btn-linea" href="https://hallpiestanobajo.substack.com" target="_blank" rel="noopener">Leer todo en Substack</a></p>
   </div>
 </section>
 
@@ -370,7 +370,7 @@ footer{padding:40px 0 50px;text-align:center;font-family:"Courier Prime",monospa
       <div class="datos">ahalleyg@gmail.com</div>
     </div>
     <div class="redes">
-      <a href="https://hallopie.substack.com" target="_blank" rel="noopener">Substack</a>
+      <a href="https://hallpiestanobajo.substack.com" target="_blank" rel="noopener">Substack</a>
       <a href="https://www.instagram.com/hallopie_sotanobajo" target="_blank" rel="noopener">Instagram</a>
       <a href="https://www.tiktok.com/@hallopie_sotanobajo" target="_blank" rel="noopener">TikTok</a>
       <a href="https://www.youtube.com/@hallopie" target="_blank" rel="noopener">YouTube</a>
@@ -394,7 +394,7 @@ footer{padding:40px 0 50px;text-align:center;font-family:"Courier Prime",monospa
     const rot=['chueco-1','chueco-2','chueco-3'];
     document.getElementById('lista-casos').innerHTML=casos.map((c,i)=>{
       const f=c.fecha?new Date(c.fecha+'T12:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}):'';
-      return `<a class="papel cinta entrada ${rot[i%3]}" href="${esc(c.link||'https://hallopie.substack.com')}" target="_blank" rel="noopener"><span class="fecha">${esc(f)}</span><h3>${esc(c.titulo)}</h3><p>${esc(c.resumen)}</p><span class="leer">Leer el caso →</span></a>`;
+      return `<a class="papel cinta entrada ${rot[i%3]}" href="${esc(c.link||'https://hallpiestanobajo.substack.com')}" target="_blank" rel="noopener"><span class="fecha">${esc(f)}</span><h3>${esc(c.titulo)}</h3><p>${esc(c.resumen)}</p><span class="leer">Leer el caso →</span></a>`;
     }).join('');
   }).catch(()=>{});
 })();
