@@ -149,12 +149,12 @@ main{height:calc(100% - 61px)}
 .platica .cabeza b{font-size:13px}
 .mensajes{overflow:auto;padding:4px 16px 8px;display:grid;gap:8px;align-content:start}
 .msg{font-size:14px;line-height:1.45;padding:8px 11px;border-radius:10px;max-width:92%;white-space:pre-wrap;overflow-wrap:anywhere}
-.msg.autor{background:var(--papel);justify-self:end;border:1px solid var(--linea)}
-.msg.editor{background:var(--hoja);border:1px solid var(--linea);border-left:3px solid var(--lapiz)}
-.msg .regla{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12.5px;color:var(--tinta-2);white-space:normal}
+.msg.r-autor{background:var(--papel);justify-self:end;border:1px solid var(--linea)}
+.msg.r-editor{background:var(--hoja);border:1px solid var(--linea);border-left:3px solid var(--lapiz)}
+.msg .regla{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px;font-size:12.5px;color:var(--tinta-2);white-space:normal}
 .escribir{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--linea)}
 .escribir textarea{flex:1;resize:none;height:56px;border:1px solid var(--linea);border-radius:6px;padding:9px 10px;background:var(--papel);font-size:14px}
-.ref{border:none;background:none;padding:0;font-family:var(--font-mono);font-size:12px;color:var(--lapiz);text-decoration:underline;cursor:pointer}
+.ref{display:inline;border:none;background:none;padding:0;font-family:var(--font-mono);font-size:12px;color:var(--lapiz);text-decoration:underline;cursor:pointer}
 .pensando{font-size:13px;color:var(--tinta-2);display:flex;gap:8px;align-items:center}
 .pensando::before{content:"";width:10px;height:10px;border-radius:50%;border:2px solid var(--lapiz);border-right-color:transparent;animation:gira 0.9s linear infinite}
 @keyframes gira{to{transform:rotate(360deg)}}
@@ -228,6 +228,9 @@ dialog::backdrop{background:rgba(15,31,61,.45)}
 .dlg h2{font-family:var(--font-libro);font-size:24px;font-weight:600}
 .dlg p{margin:0;font-size:14px}
 .dlg input{border:1px solid var(--linea);border-radius:6px;padding:9px 10px;background:var(--papel);font-family:var(--font-mono)}
+.banda-demo{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:baseline;padding:8px 20px;background:var(--marca);color:var(--tinta);font-size:13.5px;border-bottom:1px solid var(--linea)}
+.banda-demo b{color:var(--lapiz);letter-spacing:.06em;text-transform:uppercase;font-size:12px}
+body.demo main{height:calc(100% - 61px - 38px)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--tinta);color:var(--hoja);padding:10px 16px;border-radius:8px;font-size:14px;max-width:min(90vw,560px);z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .oculto{display:none !important}
 </style>
@@ -255,6 +258,7 @@ dialog::backdrop{background:rgba(15,31,61,.45)}
   </form>
 </dialog>
 
+<div class="banda-demo oculto" id="banda-demo" role="note"><b>Demostración</b><span>El editor responde con ejemplos preparados para que veas cómo se trabaja. En la versión completa lee y comenta tu libro de verdad, párrafo por párrafo.</span><span class="mono">Sótano Bajo · WhatsApp 56 7014 6203</span></div>
 <main>
   <!-- INICIO -->
   <section class="vista" id="v-inicio">
@@ -327,8 +331,11 @@ dialog::backdrop{background:rgba(15,31,61,.45)}
 <script src="mammoth.browser.min.js"></script>
 <script src="jspdf.umd.min.js"></script>
 <script src="docx.umd.js"></script>
+<script src="demo.js"></script>
 <script>
 "use strict";
+const DEMO = new URLSearchParams(location.search).has("demo");
+const PREFIJO = DEMO ? "taller-demo:" : "taller:";
 /* ============================================================
    Estado
    ============================================================ */
@@ -407,7 +414,7 @@ const Almacen = {
       const snap = await Promise.race([ this.ref(clave).get(), new Promise((_,r)=>setTimeout(()=>r(new Error("timeout")),10000)) ]);
       return snap.exists ? snap.data() : null;
     }
-    try{ const t = localStorage.getItem("taller:"+clave); return t ? JSON.parse(t) : null; }catch(e){ return null; }
+    try{ const t = localStorage.getItem(PREFIJO+clave); return t ? JSON.parse(t) : null; }catch(e){ return null; }
   },
   guardar(clave, datos){
     const cola = this.colas[clave] || (this.colas[clave] = {timer:null, corriendo:false, siguiente:null});
@@ -422,7 +429,7 @@ const Almacen = {
     cola.corriendo = true;
     const datos = cola.siguiente; cola.siguiente = null;
     try{
-      try{ localStorage.setItem("taller:"+clave, JSON.stringify(datos)); }
+      try{ localStorage.setItem(PREFIJO+clave, JSON.stringify(datos)); }
       catch(e){ marcaGuardado("No se pudo guardar"); toast("La computadora no tiene espacio para guardar. Descarga un respaldo desde Imprenta.", 7000); }
       if (this.db) await this.ref(clave).set(datos);
       marcaGuardado("Guardado en esta computadora");
@@ -438,7 +445,7 @@ const Almacen = {
   async borrarTodo(n){
     const claves = ["libro", ...Array.from({length:n},(_, i)=>"cap-"+i)];
     for (const k of claves){
-      try{ localStorage.removeItem("taller:"+k); }catch(e){}
+      try{ localStorage.removeItem(PREFIJO+k); }catch(e){}
       if (this.db) try{ await this.ref(k).delete(); }catch(e){}
     }
   }
@@ -550,6 +557,7 @@ function extraeJSON(t){
 const API_URL = "https://hook.us2.make.com/gg5x2ghnd9x27v2xwx6yoncgq7bxjdcd";
 function claveGuardada(){ try{ return localStorage.getItem("taller:clave") || ""; }catch(e){ return ""; } }
 async function preguntar(prompt, {tier="default"}={}){
+  if (DEMO) return demoResponder(prompt);
   const clave = claveGuardada();
   if (!clave){ abrirClave(); throw {code:"sin_clave"}; }
   const ctl = new AbortController(); const t = setTimeout(()=>ctl.abort(), 300000);
@@ -754,11 +762,13 @@ function diffHTML(a, b){
   const A = a.split(/(\s+)/), B = b.split(/(\s+)/);
   if (A.length * B.length > 250000) return `<del>${esc(a)}</del> <ins>${esc(b)}</ins>`;
   const n=A.length, m=B.length, L = Array.from({length:n+1},()=>new Uint16Array(m+1));
-  for (let i=n-1;i>=0;i--) for (let j=m-1;j>=0;j--) L[i][j] = A[i]===B[j] ? L[i+1][j+1]+1 : Math.max(L[i+1][j], L[i][j+1]);
+  // Iguales si solo cambian mayúsculas/minúsculas: se muestra la versión nueva sin marcar.
+  const eq = (x,y) => x===y || x.toLocaleLowerCase("es")===y.toLocaleLowerCase("es");
+  for (let i=n-1;i>=0;i--) for (let j=m-1;j>=0;j--) L[i][j] = eq(A[i],B[j]) ? L[i+1][j+1]+1 : Math.max(L[i+1][j], L[i][j+1]);
   let i=0,j=0,out="",del="",ins="";
   const flush=()=>{ if(del) out+=`<del>${esc(del)}</del>`; if(ins) out+=`<ins>${esc(ins)}</ins>`; del=ins=""; };
   while(i<n && j<m){
-    if (A[i]===B[j]){ flush(); out+=esc(A[i]); i++; j++; }
+    if (eq(A[i],B[j])){ flush(); out+=esc(B[j]); i++; j++; }
     else if (L[i+1][j] >= L[i][j+1]){ del+=A[i++]; }
     else { ins+=B[j++]; }
   }
@@ -920,7 +930,7 @@ function pintarNotas(){
   h += lista.map(s=>{
     const vigente = encontrar(c.ps[s.p]||"", s.original) !== -1;
     const diff = s.estado==="aceptada" ? `<ins>${esc(s.propuesta)}</ins>` : diffHTML(s.original, s.propuesta);
-    const hilo = s.hilo.length ? `<div class="hilo">${s.hilo.map(m=>`<div class="msg ${m.role}">${refsHTML(m.text)}${m.regla?`<div class="regla"><span>Regla: ${esc(m.regla)}</span><button class="btn chico" data-regla="${esc(m.regla)}">Guardar</button></div>`:""}</div>`).join("")}</div>` : "";
+    const hilo = s.hilo.length ? `<div class="hilo">${s.hilo.map(m=>`<div class="msg r-${m.role}">${refsHTML(m.text)}${m.regla?`<div class="regla"><span>Regla: ${esc(m.regla)}</span><button class="btn chico" data-regla="${esc(m.regla)}">Guardar</button></div>`:""}</div>`).join("")}</div>` : "";
     const acciones = s.estado==="pendiente" ? `<div class="fila">
         <button class="btn chico primario" data-aceptar="${s.id}" ${vigente?"":"disabled"}>Aceptar</button>
         <button class="btn chico" data-rechazar="${s.id}">Rechazar</button>
@@ -943,7 +953,7 @@ function pintarNotas(){
 function pintarChat(pensando=false){
   const msgs = S.meta.chat;
   let h = msgs.length ? "" : `<p class="vacio">Pregúntale lo que quieras sobre el capítulo abierto: "¿esto se repite?", "en el párrafo 8 quiero decir que fue en Mérida", "¿cómo empiezo mejor este capítulo?".</p>`;
-  h += msgs.map(m=>`<div class="msg ${m.role}">${m.cap!=null && m.role==="autor"?`<span class="mono muted">C${m.cap+1} · </span>`:""}${refsHTML(m.text)}${m.regla?`<div class="regla"><span>Regla: ${esc(m.regla)}</span><button class="btn chico" data-regla="${esc(m.regla)}">Guardar</button></div>`:""}</div>`).join("");
+  h += msgs.map(m=>`<div class="msg r-${m.role}">${m.cap!=null && m.role==="autor"?`<span class="mono muted">C${m.cap+1} · </span>`:""}${refsHTML(m.text)}${m.regla?`<div class="regla"><span>Regla: ${esc(m.regla)}</span><button class="btn chico" data-regla="${esc(m.regla)}">Guardar</button></div>`:""}</div>`).join("");
   if (pensando) h += `<div class="pensando">El editor está pensando…</div>`;
   const el = $("#mensajes"); el.innerHTML = h; el.scrollTop = el.scrollHeight;
 }
@@ -1442,6 +1452,7 @@ zona.addEventListener("drop", e=>{ const f = e.dataTransfer.files[0]; if (f) alS
    Arranque
    ============================================================ */
 (async function(){
+  if (DEMO){ document.body.classList.add("demo"); $("#banda-demo").classList.remove("oculto"); $("#btn-clave").classList.add("oculto"); }
   const hashInicial = location.hash.slice(1);
   irA("inicio");
   marcaGuardado("Conectando…");
