@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taller Editorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:"EB Garamond Libro";src:url("fonts/EBGaramond-Regular.ttf") format("truetype");font-weight:400;font-style:normal}
+@font-face{font-family:"EB Garamond Libro";src:url("fonts/EBGaramond-Italic.ttf") format("truetype");font-weight:400;font-style:italic}
+@font-face{font-family:"EB Garamond Libro";src:url("fonts/EBGaramond-SemiBold.ttf") format("truetype");font-weight:600;font-style:normal}
+
+/* Mesa de corrección: papel frío, tinta azul marino, lápiz rojo de editor, marcatextos amarillo.
+   Layout: índice | manuscrito | mesa del editor (sugerencias + plática). */
+:root{
+  --papel:#f4f5f7;
+  --hoja:#ffffff;
+  --tinta:#0f1f3d;
+  --tinta-2:#4a5672;
+  --linea:#d9dde6;
+  --lapiz:#c4262e;
+  --marca:#fff1a8;
+  --ok:#1f7a4d;
+  --ok-bg:#e3f3ea;
+  --aviso:#a15c00;
+  --font-ui:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-libro:"EB Garamond Libro","EB Garamond",Garamond,Georgia,serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --papel:#0d1424;--hoja:#141d31;--tinta:#e7ebf3;--tinta-2:#9aa6bf;--linea:#26314a;
+    --lapiz:#ff6b6b;--marca:#4a4114;--ok:#5fd39a;--ok-bg:#163527;--aviso:#f0b35a;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --papel:#0d1424;--hoja:#141d31;--tinta:#e7ebf3;--tinta-2:#9aa6bf;--linea:#26314a;
+  --lapiz:#ff6b6b;--marca:#4a4114;--ok:#5fd39a;--ok-bg:#163527;--aviso:#f0b35a;color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--papel);color:var(--tinta);font:15px/1.5 var(--font-ui);}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--lapiz);outline-offset:2px}
+h1,h2,h3{text-wrap:balance;margin:0}
+.muted{color:var(--tinta-2)}
+.mono{font-family:var(--font-mono);font-size:12px;letter-spacing:.02em}
+
+/* Barra superior */
+header.top{display:flex;align-items:center;gap:16px;padding:10px 20px;border-bottom:1px solid var(--linea);background:var(--hoja);flex-wrap:wrap}
+.marca{display:flex;flex-direction:column;line-height:1.15}
+.marca b{font-family:var(--font-libro);font-size:22px;font-weight:600}
+.marca span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--tinta-2)}
+nav.etapas{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+nav.etapas button{border:1px solid transparent;background:none;padding:6px 12px;border-radius:6px;font-size:14px;color:var(--tinta-2);display:flex;gap:6px;align-items:center}
+nav.etapas button .n{font-family:var(--font-mono);font-size:11px;border:1px solid var(--linea);border-radius:50%;width:20px;height:20px;display:inline-grid;place-items:center}
+nav.etapas button[aria-current="true"]{color:var(--tinta);border-color:var(--linea);background:var(--papel);font-weight:500}
+nav.etapas button[aria-current="true"] .n{border-color:var(--lapiz);color:var(--lapiz)}
+.estado-guardado{font-size:12px;color:var(--tinta-2);white-space:nowrap}
+
+main{height:calc(100% - 61px)}
+.vista{display:none;height:100%}
+.vista.activa{display:block}
+
+/* Botones */
+.btn{border:1px solid var(--linea);background:var(--hoja);padding:7px 14px;border-radius:6px;font-size:14px;font-weight:500}
+.btn:hover{border-color:var(--tinta-2)}
+.btn.primario{background:var(--tinta);color:var(--hoja);border-color:var(--tinta)}
+.btn.primario:hover{opacity:.9}
+.btn.rojo{color:var(--lapiz);border-color:var(--lapiz)}
+.btn.chico{padding:4px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.fila{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* Inicio */
+.inicio{max-width:760px;margin:0 auto;padding:48px 20px;display:grid;gap:28px}
+.inicio h1{font-family:var(--font-libro);font-size:40px;font-weight:600;line-height:1.1}
+.inicio p.lead{font-size:17px;color:var(--tinta-2);max-width:60ch;margin:8px 0 0}
+.soltar{border:2px dashed var(--linea);border-radius:10px;background:var(--hoja);padding:32px;text-align:center;display:grid;gap:12px;justify-items:center}
+.soltar.sobre{border-color:var(--lapiz)}
+.pasos{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:0;padding:0;list-style:none}
+.pasos li{background:var(--hoja);border:1px solid var(--linea);border-radius:8px;padding:14px;display:grid;gap:4px}
+.pasos li b{font-size:14px}
+.pasos li span{font-size:13px;color:var(--tinta-2)}
+.pasos .mono{color:var(--lapiz)}
+.campos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.campo{display:grid;gap:4px}
+.campo label{font-size:12px;color:var(--tinta-2);font-weight:500}
+.campo input,.campo textarea,.campo select{border:1px solid var(--linea);background:var(--hoja);border-radius:6px;padding:8px 10px}
+@media (max-width:560px){.campos{grid-template-columns:1fr}}
+
+/* Mesa de trabajo (Libro) */
+.mesa{display:grid;grid-template-columns:230px minmax(0,1fr) 400px;height:100%}
+.indice{border-right:1px solid var(--linea);overflow:auto;padding:14px 10px;background:var(--hoja)}
+.indice h3{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--tinta-2);padding:0 8px 8px}
+.indice button{display:grid;grid-template-columns:36px 1fr;gap:2px 6px;width:100%;text-align:left;border:none;background:none;padding:8px;border-radius:6px}
+.indice button[aria-current="true"]{background:var(--papel)}
+.indice .rom{font-family:var(--font-mono);font-size:12px;color:var(--tinta-2);padding-top:2px}
+.indice .tit{font-size:13.5px;line-height:1.3}
+.indice .marcas{grid-column:2;display:flex;gap:4px;margin-top:3px}
+.pill{font-size:10.5px;font-family:var(--font-mono);border:1px solid var(--linea);border-radius:10px;padding:0 6px;color:var(--tinta-2)}
+.pill.hecho{border-color:var(--ok);color:var(--ok);background:var(--ok-bg)}
+.pill.pend{border-color:var(--lapiz);color:var(--lapiz)}
+
+.manuscrito{overflow:auto;padding:28px 32px 80px}
+.hoja{max-width:680px;margin:0 auto;background:var(--hoja);border:1px solid var(--linea);border-radius:4px;padding:40px 48px 56px}
+.hoja .cap-num{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;color:var(--lapiz);text-transform:uppercase}
+.hoja h2{font-family:var(--font-libro);font-size:30px;font-weight:600;margin:6px 0 24px;line-height:1.15}
+.hoja h2[contenteditable="true"]{outline:1px dashed var(--linea)}
+.parr{position:relative;display:grid;grid-template-columns:46px 1fr;gap:10px;padding:4px 0;border-radius:4px}
+.parr .num{font-family:var(--font-mono);font-size:11px;color:var(--tinta-2);text-align:right;padding-top:6px;line-height:1.3}
+.parr .num small{display:block;opacity:.75}
+.parr .txt{font-family:var(--font-libro);font-size:19px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.parr.con-nota .txt{border-left:3px solid var(--lapiz);padding-left:10px;margin-left:-13px}
+.parr.destello{background:var(--marca)}
+.parr mark{background:var(--marca);color:inherit;border-bottom:2px solid var(--lapiz)}
+.parr .lapiz{position:absolute;right:-30px;top:4px;opacity:0;border:none;background:none;color:var(--tinta-2);font-size:14px;padding:4px}
+.parr:hover .lapiz,.parr .lapiz:focus{opacity:1}
+.parr textarea{width:100%;min-height:120px;font-family:var(--font-libro);font-size:18px;line-height:1.5;border:1px solid var(--lapiz);border-radius:4px;padding:8px;background:var(--hoja)}
+
+.editor{border-left:1px solid var(--linea);background:var(--hoja);display:grid;grid-template-rows:auto minmax(0,1fr) minmax(220px,40%);min-height:0}
+.editor .cabeza{padding:14px 16px;border-bottom:1px solid var(--linea);display:grid;gap:10px}
+.segmentado{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--linea);border-radius:6px;overflow:hidden}
+.segmentado button{border:none;background:none;padding:7px 4px;font-size:13px;border-right:1px solid var(--linea)}
+.segmentado button:last-child{border-right:none}
+.segmentado button[aria-pressed="true"]{background:var(--tinta);color:var(--hoja)}
+.ayuda-etapa{font-size:12.5px;color:var(--tinta-2);margin:0}
+.notas{overflow:auto;padding:12px 16px;display:grid;gap:10px;align-content:start}
+.nota{border:1px solid var(--linea);border-radius:8px;padding:12px;display:grid;gap:8px;background:var(--hoja)}
+.nota.aceptada{border-color:var(--ok);background:var(--ok-bg)}
+.nota.rechazada{opacity:.55}
+.nota .meta{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.nota .meta button{border:none;background:none;padding:0;font-family:var(--font-mono);font-size:12px;color:var(--lapiz);text-decoration:underline}
+.nota .tipo{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-2);font-weight:600}
+.nota .diff{font-family:var(--font-libro);font-size:16px;line-height:1.45;overflow-wrap:anywhere}
+.diff del{color:var(--lapiz);text-decoration:line-through}
+.diff del + ins{margin-left:4px}
+.diff ins{color:var(--ok);text-decoration:underline;text-underline-offset:2px}
+.nota .porque{font-size:13px;color:var(--tinta-2);margin:0}
+.nota .hilo{display:grid;gap:6px;border-top:1px solid var(--linea);padding-top:8px}
+.nota .aviso{font-size:12px;color:var(--aviso)}
+.vacio{font-size:14px;color:var(--tinta-2);padding:8px 2px;margin:0}
+
+.platica{border-top:1px solid var(--linea);display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-height:0}
+.platica .cabeza{padding:10px 16px;border-bottom:none;display:flex;justify-content:space-between;align-items:center}
+.platica .cabeza b{font-size:13px}
+.mensajes{overflow:auto;padding:4px 16px 8px;display:grid;gap:8px;align-content:start}
+.msg{font-size:14px;line-height:1.45;padding:8px 11px;border-radius:10px;max-width:92%;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.autor{background:var(--papel);justify-self:end;border:1px solid var(--linea)}
+.msg.editor{background:var(--hoja);border:1px solid var(--linea);border-left:3px solid var(--lapiz)}
+.msg .regla{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12.5px;color:var(--tinta-2);white-space:normal}
+.escribir{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--linea)}
+.escribir textarea{flex:1;resize:none;height:56px;border:1px solid var(--linea);border-radius:6px;padding:9px 10px;background:var(--papel);font-size:14px}
+.ref{border:none;background:none;padding:0;font-family:var(--font-mono);font-size:12px;color:var(--lapiz);text-decoration:underline;cursor:pointer}
+.pensando{font-size:13px;color:var(--tinta-2);display:flex;gap:8px;align-items:center}
+.pensando::before{content:"";width:10px;height:10px;border-radius:50%;border:2px solid var(--lapiz);border-right-color:transparent;animation:gira 0.9s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.pensando::before{animation:none}}
+
+/* Selector de capítulo para pantallas chicas */
+.selector-cap{display:none;padding:10px 16px;border-bottom:1px solid var(--linea);background:var(--hoja)}
+.selector-cap select{width:100%;padding:8px;border:1px solid var(--linea);border-radius:6px;background:var(--hoja)}
+@media (max-width:1100px){
+  .mesa{grid-template-columns:minmax(0,1fr) 360px}
+  .indice{display:none}
+  .selector-cap{display:block}
+}
+@media (max-width:760px){
+  main{height:auto}
+  .mesa{display:block;height:auto}
+  .manuscrito{padding:16px 12px 24px}
+  .hoja{padding:24px 18px 32px}
+  .parr{grid-template-columns:34px 1fr}
+  .parr .txt{font-size:17px}
+  .editor{border-left:none;border-top:1px solid var(--linea);grid-template-rows:auto auto auto}
+  .notas{max-height:none}
+  .mensajes{max-height:360px}
+}
+
+/* Páginas generales (diagnóstico, voz, diseño, imprenta) */
+.pagina{overflow:auto;height:100%;padding:28px 20px 80px}
+.columna{max-width:860px;margin:0 auto;display:grid;gap:22px}
+.columna > header{display:grid;gap:6px}
+.columna > header h1{font-family:var(--font-libro);font-size:32px;font-weight:600}
+.columna > header p{margin:0;color:var(--tinta-2);max-width:65ch}
+.panel{background:var(--hoja);border:1px solid var(--linea);border-radius:8px;padding:18px 20px;display:grid;gap:12px}
+.panel h2{font-size:15px;font-weight:600}
+.panel ul{margin:0;padding-left:18px;display:grid;gap:6px}
+.panel li{line-height:1.45}
+.tabla{width:100%;border-collapse:collapse;font-size:14px}
+.tabla th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-2);font-weight:600;border-bottom:1px solid var(--linea);padding:6px 8px}
+.tabla td{border-bottom:1px solid var(--linea);padding:8px;vertical-align:top}
+.envoltura-tabla{overflow-x:auto}
+.cifras{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.cifra{background:var(--hoja);border:1px solid var(--linea);border-radius:8px;padding:12px 14px}
+.cifra b{display:block;font-family:var(--font-libro);font-size:28px;font-weight:600;font-variant-numeric:tabular-nums}
+.cifra span{font-size:12.5px;color:var(--tinta-2)}
+
+.reglas{display:grid;gap:8px}
+.regla-item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;border:1px solid var(--linea);border-radius:6px;padding:8px 10px;background:var(--hoja)}
+.regla-item textarea{border:none;background:none;resize:vertical;min-height:24px;font-size:14px;line-height:1.4;padding:0;width:100%}
+.regla-item .origen{grid-column:1;font-size:11px;color:var(--tinta-2)}
+
+/* Diseño */
+.portadas{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+.opcion-portada{display:grid;gap:10px;justify-items:center;border:2px solid transparent;border-radius:10px;padding:12px;background:var(--hoja)}
+.opcion-portada[aria-checked="true"]{border-color:var(--lapiz)}
+.portada{width:252px;height:378px;position:relative;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.15),0 8px 24px rgba(15,31,61,.18);border-radius:2px 4px 4px 2px}
+.portada svg.ilus{position:absolute;inset:0;width:100%;height:100%}
+.portada .textos{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:30px 22px;text-align:center;font-family:var(--font-libro)}
+.portada .t{font-size:27px;line-height:1.1;font-weight:600;text-wrap:balance}
+.portada .s{font-size:13px;font-style:italic;margin-top:8px}
+.portada .a{font-size:13px;letter-spacing:.18em;text-transform:uppercase}
+.opcion-portada p{margin:0;font-size:13px;color:var(--tinta-2);max-width:34ch;text-align:center}
+.paginas{display:flex;gap:16px;overflow-x:auto;padding:6px 2px 16px}
+.pag{flex:none;width:420px;height:630px;background:#fffefb;color:#1a1a1a;position:relative;box-shadow:0 1px 2px rgba(0,0,0,.12),0 6px 18px rgba(15,31,61,.12);font-family:var(--font-libro);overflow:hidden}
+.pag .ln{position:absolute;white-space:pre;line-height:1}
+.pag .ln.j{text-align:justify;text-align-last:justify;white-space:normal}
+.pag .folio{position:absolute;bottom:0;width:100%;text-align:center;font-family:var(--font-mono);font-size:10px;color:#888;padding-bottom:6px}
+.escala-nota{font-size:12.5px;color:var(--tinta-2);margin:0}
+
+dialog{border:1px solid var(--linea);border-radius:10px;background:var(--hoja);color:var(--tinta);padding:0;max-width:min(92vw,420px)}
+dialog::backdrop{background:rgba(15,31,61,.45)}
+.dlg{display:grid;gap:12px;padding:22px}
+.dlg h2{font-family:var(--font-libro);font-size:24px;font-weight:600}
+.dlg p{margin:0;font-size:14px}
+.dlg input{border:1px solid var(--linea);border-radius:6px;padding:9px 10px;background:var(--papel);font-family:var(--font-mono)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--tinta);color:var(--hoja);padding:10px 16px;border-radius:8px;font-size:14px;max-width:min(90vw,560px);z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.oculto{display:none !important}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="marca"><b>Taller Editorial</b><span id="titulo-libro">Sótano Bajo</span></div>
+  <nav class="etapas" id="nav" aria-label="Etapas">
+    <button data-vista="diagnostico"><span class="n">1</span>Lectura</button>
+    <button data-vista="libro"><span class="n">2</span>Edición</button>
+    <button data-vista="voz"><span class="n">3</span>Tu voz</button>
+    <button data-vista="diseno"><span class="n">4</span>Diseño y portada</button>
+    <button data-vista="imprenta"><span class="n">5</span>Imprenta</button>
+  </nav>
+  <span class="estado-guardado" id="guardado"></span>
+  <button class="btn chico" id="btn-clave" title="Código de acceso al editor">Código</button>
+</header>
+<dialog id="dlg-clave" aria-labelledby="dlg-clave-t">
+  <form method="dialog" id="form-clave" class="dlg">
+    <h2 id="dlg-clave-t">Código de acceso</h2>
+    <p class="muted">Es el código que te dio Sótano Bajo para usar al editor. Solo se guarda en esta computadora.</p>
+    <label for="in-clave" class="oculto">Código</label>
+    <input id="in-clave" autocomplete="off" placeholder="camino-…">
+    <div class="fila"><button class="btn primario" type="submit">Guardar</button><button class="btn" type="button" id="btn-cerrar-clave">Cancelar</button></div>
+  </form>
+</dialog>
+
+<main>
+  <!-- INICIO -->
+  <section class="vista" id="v-inicio">
+    <div class="pagina"><div class="inicio">
+      <div>
+        <h1>Tu libro ya está escrito. Aquí lo editamos juntos.</h1>
+        <p class="lead">Sube tu manuscrito en Word. El editor lo lee completo, te va dejando notas página por página y tú decides qué cambia. Al final lo dejamos maquetado y listo para la imprenta.</p>
+      </div>
+      <div class="soltar" id="soltar">
+        <b>Arrastra aquí tu manuscrito</b>
+        <span class="muted">Word (.docx) o texto (.txt). Los capítulos se detectan solos si empiezan con "Capítulo I", "Capítulo II"…</span>
+        <label class="btn primario" for="archivo">Elegir archivo</label>
+        <input type="file" id="archivo" accept=".docx,.txt,.md" class="oculto">
+        <span class="muted" id="msg-carga"></span>
+      </div>
+      <ol class="pasos">
+        <li><span class="mono">01 · Lectura</span><b>Diagnóstico completo</b><span>Qué funciona, qué se repite, qué suena a máquina.</span></li>
+        <li><span class="mono">02 · Edición</span><b>Fondo, estilo y corrección</b><span>Notas puntuales que aceptas, rechazas o platicas.</span></li>
+        <li><span class="mono">03 · Tu voz</span><b>Hoja de estilo</b><span>Las reglas que van decidiendo juntos.</span></li>
+        <li><span class="mono">04 · Diseño</span><b>Interiores y portada</b><span>Formato 14 × 21 cm y dos propuestas de portada.</span></li>
+        <li><span class="mono">05 · Imprenta</span><b>PDF y Word</b><span>Archivos listos para imprimir unos cuantos ejemplares.</span></li>
+      </ol>
+    </div></div>
+  </section>
+
+  <!-- DIAGNÓSTICO -->
+  <section class="vista" id="v-diagnostico"><div class="pagina"><div class="columna" id="diag"></div></div></section>
+
+  <!-- LIBRO / EDICIÓN -->
+  <section class="vista" id="v-libro">
+    <div class="selector-cap"><label for="sel-cap" class="oculto">Capítulo</label><select id="sel-cap"></select></div>
+    <div class="mesa">
+      <aside class="indice" id="indice" aria-label="Capítulos"></aside>
+      <div class="manuscrito" id="manuscrito"></div>
+      <aside class="editor" aria-label="Editor">
+        <div class="cabeza">
+          <div class="segmentado" role="group" aria-label="Tipo de revisión">
+            <button data-etapa="fondo" aria-pressed="true">Fondo</button>
+            <button data-etapa="estilo" aria-pressed="false">Estilo</button>
+            <button data-etapa="correccion" aria-pressed="false">Corrección</button>
+          </div>
+          <p class="ayuda-etapa" id="ayuda-etapa"></p>
+          <div class="fila"><button class="btn primario" id="btn-revisar">Revisar este capítulo</button><span id="estado-revision" class="pensando oculto">El editor está leyendo…</span></div>
+        </div>
+        <div class="notas" id="notas"></div>
+        <div class="platica">
+          <div class="cabeza"><b>Platica con tu editor</b><button class="btn chico" id="btn-limpiar-chat" title="Borra la conversación general">Limpiar</button></div>
+          <div class="mensajes" id="mensajes"></div>
+          <form class="escribir" id="form-chat">
+            <label for="txt-chat" class="oculto">Mensaje</label>
+            <textarea id="txt-chat" placeholder="Ej.: ¿El párrafo 12 se repite con otro capítulo?"></textarea>
+            <button class="btn primario" type="submit">Enviar</button>
+          </form>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- TU VOZ -->
+  <section class="vista" id="v-voz"><div class="pagina"><div class="columna" id="voz"></div></div></section>
+
+  <!-- DISEÑO -->
+  <section class="vista" id="v-diseno"><div class="pagina"><div class="columna" id="diseno"></div></div></section>
+
+  <!-- IMPRENTA -->
+  <section class="vista" id="v-imprenta"><div class="pagina"><div class="columna" id="imprenta"></div></div></section>
+</main>
+<div class="toast oculto" id="toast" role="status"></div>
+
+<script src="mammoth.browser.min.js"></script>
+<script src="jspdf.umd.min.js"></script>
+<script src="docx.umd.js"></script>
+<script>
+"use strict";
+/* ============================================================
+   Estado
+   ============================================================ */
+const ETAPAS = {
+  fondo: {nombre:"Fondo", ayuda:"Estructura y contenido: repeticiones con otros capítulos, contradicciones, huecos en la historia y párrafos que sobran o conviene mover."},
+  estilo: {nombre:"Estilo", ayuda:"Cómo suena: frases que delatan a la IA, muletillas, oraciones demasiado largas. Siempre cuidando que suene a ti."},
+  correccion: {nombre:"Corrección", ayuda:"Ortografía, acentos, puntuación, mayúsculas sostenidas y diálogos con raya. Una nota por párrafo que lo necesite."}
+};
+let S = null;            // {meta, caps}
+let capActual = 0;
+let etapaActual = "fondo";
+let vistaActual = "inicio";
+let ocupado = false;
+
+function nuevoEstado(titulo, preliminares, caps){
+  return {
+    meta:{
+      version:1, titulo, autor:"", subtitulo:"", dedicatoria:"",
+      creado:new Date().toISOString(), preliminares,
+      diagnostico:null, voz:[], estilo:[], chat:[],
+      diseno:{tamano:11.5, portadas:null, elegida:null}
+    },
+    caps
+  };
+}
+
+/* ============================================================
+   Utilidades
+   ============================================================ */
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = () => Math.random().toString(36).slice(2,10);
+const ROMANOS = ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX","XX","XXI","XXII","XXIII","XXIV","XXV"];
+function toast(t, ms=3200){ const el=$("#toast"); el.textContent=t; el.classList.remove("oculto"); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.add("oculto"), ms); }
+function palabras(s){ return (s.match(/\S+/g)||[]).length; }
+function normaliza(s){ return String(s).replace(/\s+/g," ").trim(); }
+
+function capitalizaTitulo(t){
+  // "LA LLEGADA." -> "La llegada"; respeta títulos ya en minúsculas.
+  t = normaliza(t).replace(/\.$/, "");
+  const letras = t.replace(/[^A-Za-zÁÉÍÓÚÑÜáéíóúñü]/g,"");
+  const mayus = letras.replace(/[^A-ZÁÉÍÓÚÑÜ]/g,"").length;
+  if (letras.length && mayus/letras.length > .7) { t = t.toLowerCase(); t = t.charAt(0).toUpperCase()+t.slice(1); }
+  return t;
+}
+
+/* Página estimada en el libro final (14×21 cm, ~230 palabras por página) */
+function mapaPaginas(){
+  const mapa = []; let acumulado = 0; let pag = 4;
+  S.caps.forEach((c,i) => {
+    pag = Math.max(pag, Math.ceil(acumulado/230)+4+i);
+    mapa[i] = [];
+    c.ps.forEach((p,j) => { mapa[i][j] = Math.ceil((acumulado+1)/230)+3+i; acumulado += palabras(p); });
+  });
+  return mapa;
+}
+
+/* ============================================================
+   Guardado: base de datos de la app (privada por persona) con respaldo local
+   ============================================================ */
+const Almacen = {
+  db:null, id:null, colas:{}, pendientes:0,
+  async iniciar(){
+    return false; // versión independiente: se guarda en este navegador
+    try{
+      const [db, user] = await Promise.all([claude.use("db"), claude.use("user")]);
+      if (!db || !user) return false;
+      const id = await user.id();
+      if (!id) return false;
+      this.db = db; this.id = id; return true;
+    }catch(e){ return false; }
+  },
+  ref(clave){ return this.db.doc("data/users/"+this.id+"/"+clave); },
+  async leer(clave){
+    if (this.db){
+      const snap = await Promise.race([ this.ref(clave).get(), new Promise((_,r)=>setTimeout(()=>r(new Error("timeout")),10000)) ]);
+      return snap.exists ? snap.data() : null;
+    }
+    try{ const t = localStorage.getItem("taller:"+clave); return t ? JSON.parse(t) : null; }catch(e){ return null; }
+  },
+  guardar(clave, datos){
+    const cola = this.colas[clave] || (this.colas[clave] = {timer:null, corriendo:false, siguiente:null});
+    cola.siguiente = JSON.parse(JSON.stringify(datos));
+    clearTimeout(cola.timer);
+    marcaGuardado("Guardando…");
+    cola.timer = setTimeout(()=>this._vaciar(clave), 700);
+  },
+  async _vaciar(clave){
+    const cola = this.colas[clave];
+    if (cola.corriendo || !cola.siguiente) return;
+    cola.corriendo = true;
+    const datos = cola.siguiente; cola.siguiente = null;
+    try{
+      try{ localStorage.setItem("taller:"+clave, JSON.stringify(datos)); }
+      catch(e){ marcaGuardado("No se pudo guardar"); toast("La computadora no tiene espacio para guardar. Descarga un respaldo desde Imprenta.", 7000); }
+      if (this.db) await this.ref(clave).set(datos);
+      marcaGuardado("Guardado en esta computadora");
+    }catch(e){
+      marcaGuardado("No se pudo guardar");
+      if (e && e.code === "invalid_argument") toast("No tienes permiso para guardar aquí. Pide al dueño que te dé acceso de Colaborador.", 6000);
+      else if (e && e.code === "quota_exceeded") toast("El espacio de la app está lleno. Descarga un respaldo desde Imprenta.", 6000);
+    }finally{
+      cola.corriendo = false;
+      if (cola.siguiente) this._vaciar(clave);
+    }
+  },
+  async borrarTodo(n){
+    const claves = ["libro", ...Array.from({length:n},(_, i)=>"cap-"+i)];
+    for (const k of claves){
+      try{ localStorage.removeItem("taller:"+k); }catch(e){}
+      if (this.db) try{ await this.ref(k).delete(); }catch(e){}
+    }
+  }
+};
+function abrirClave(){ const d = $("#dlg-clave"); $("#in-clave").value = claveGuardada(); if (!d.open) d.showModal(); }
+function marcaGuardado(t){ $("#guardado").textContent = t; }
+function guardarMeta(){ if (S) Almacen.guardar("libro", {...S.meta, numCaps:S.caps.length}); }
+function guardarCap(i){ if (S) Almacen.guardar("cap-"+i, S.caps[i]); }
+function guardarTodo(){ guardarMeta(); S.caps.forEach((_,i)=>guardarCap(i)); }
+
+async function cargar(){
+  const meta = await Almacen.leer("libro");
+  if (!meta) return null;
+  const caps = [];
+  for (let i=0;i<(meta.numCaps||0);i++){
+    const c = await Almacen.leer("cap-"+i);
+    if (c) caps.push(c);
+  }
+  if (!caps.length) return null;
+  const m = {...meta}; delete m.numCaps;
+  m.diseno = m.diseno || {tamano:11.5, portadas:null, elegida:null};
+  return {meta:m, caps};
+}
+
+/* ============================================================
+   Lectura del manuscrito
+   ============================================================ */
+const RE_CAP = /^cap[ií]tulo\s+([ivxlc]+|\d+)\b\.?\s*(.*)$/i;
+function dividirEnCapitulos(texto){
+  const ps = texto.split(/\n+/).map(normaliza).filter(Boolean);
+  const pre = [], caps = []; let cur = null;
+  for (const p of ps){
+    const m = p.length < 60 ? p.match(RE_CAP) : null;
+    if (m){
+      const rom = /^\d+$/.test(m[1]) ? (ROMANOS[+m[1]-1]||m[1]) : m[1].toUpperCase();
+      cur = {id:uid(), num:"Capítulo "+rom, titulo:m[2] ? capitalizaTitulo(m[2]) : "", ps:[], sug:[], revisado:{}, hilos:{}};
+      caps.push(cur); continue;
+    }
+    if (cur && !cur.titulo && p.length < 90){ cur.titulo = capitalizaTitulo(p); continue; }
+    (cur ? cur.ps : pre).push(p);
+  }
+  if (!caps.length){
+    // Sin capítulos marcados: un solo bloque.
+    return {pre:[], caps:[{id:uid(), num:"Capítulo I", titulo:"Sin título", ps:pre, sug:[], revisado:{}, hilos:{}}]};
+  }
+  return {pre, caps};
+}
+
+async function leerArchivo(archivo){
+  const nombre = archivo.name.toLowerCase();
+  if (nombre.endsWith(".docx")){
+    const buf = await archivo.arrayBuffer();
+    const r = await mammoth.extractRawText({arrayBuffer:buf});
+    return r.value;
+  }
+  return await archivo.text();
+}
+
+async function alSubir(archivo){
+  if (!archivo) return;
+  $("#msg-carga").textContent = "Leyendo "+archivo.name+"…";
+  try{
+    const texto = await leerArchivo(archivo);
+    const {pre, caps} = dividirEnCapitulos(texto);
+    const candidato = pre.find(p => p.length < 80 && !/^(manuscrito|borrador|cap[ií]tulos?\b|versi[oó]n\b)/i.test(p));
+    const titulo = candidato ? capitalizaTitulo(candidato) : "Mi libro";
+    S = nuevoEstado(titulo, pre, caps);
+    capActual = 0;
+    guardarTodo();
+    const total = caps.reduce((a,c)=>a+c.ps.reduce((b,p)=>b+palabras(p),0),0);
+    toast(`Listo: ${caps.length} capítulos y ${total.toLocaleString("es-MX")} palabras.`);
+    pintarTodo();
+    irA("diagnostico");
+  }catch(e){
+    console.error(e);
+    $("#msg-carga").textContent = "No pude leer ese archivo. Prueba guardarlo de nuevo como .docx desde Word.";
+  }
+}
+
+/* ============================================================
+   Conversación con la IA
+   ============================================================ */
+const BASE_EDITOR = `Eres el editor de un pequeño sello editorial familiar. Trabajas con el autor de un libro ya terminado (no es un libro para vender; es para su familia y amigos). Tu papel es el de un editor profesional que recibe el manuscrito: lees, señalas y propones; el autor decide.
+
+Principios:
+- La voz del autor manda. No reescribas el libro ni lo vuelvas genérico. Propones cambios puntuales y explicas por qué.
+- Si el manuscrito mezcla texto en MAYÚSCULAS sostenidas con texto en minúsculas pulido, trata lo de mayúsculas como agregados del propio autor: es su voz auténtica (aunque tenga errores). El texto pulido en minúsculas probablemente lo generó una IA y es el que más suele necesitar acercarse a la voz del autor.
+- Escribe en español de México, claro y cálido, sin tecnicismos. Habla de tú al autor.
+- Cita los párrafos con su referencia exacta, por ejemplo C3¶12 (capítulo 3, párrafo 12).
+- Nunca inventes hechos de la vida del autor. Si falta un dato, pregúntalo.`;
+
+function hojaDeEstilo(){
+  const v = S.meta.voz.length ? "Rasgos de la voz del autor:\n- "+S.meta.voz.join("\n- ") : "";
+  const r = S.meta.estilo.length ? "Hoja de estilo acordada con el autor (respétala siempre):\n- "+S.meta.estilo.map(x=>x.texto).join("\n- ") : "Aún no hay hoja de estilo acordada.";
+  return [v, r].filter(Boolean).join("\n\n");
+}
+function textoCapitulo(i){
+  const c = S.caps[i];
+  return `### C${i+1} — ${c.num}: ${c.titulo}\n` + c.ps.map((p,j)=>`[C${i+1}¶${j+1}] ${p}`).join("\n");
+}
+function textoLibro(){ return S.caps.map((_,i)=>textoCapitulo(i)).join("\n\n"); }
+
+function extraeJSON(t){
+  const a = t.indexOf("{"), b = t.lastIndexOf("}");
+  if (a < 0 || b <= a) throw new Error("sin json");
+  return JSON.parse(t.slice(a, b+1));
+}
+
+const API_URL = "https://hook.us2.make.com/gg5x2ghnd9x27v2xwx6yoncgq7bxjdcd";
+function claveGuardada(){ try{ return localStorage.getItem("taller:clave") || ""; }catch(e){ return ""; } }
+async function preguntar(prompt, {tier="default"}={}){
+  const clave = claveGuardada();
+  if (!clave){ abrirClave(); throw {code:"sin_clave"}; }
+  const ctl = new AbortController(); const t = setTimeout(()=>ctl.abort(), 300000);
+  let res;
+  try{
+    res = await fetch(API_URL, {method:"POST", body:new URLSearchParams({clave, tier, prompt_j:JSON.stringify(prompt)}), signal:ctl.signal});
+  }catch(e){ throw {code: e.name==="AbortError" ? "tiempo" : "red"}; }
+  finally{ clearTimeout(t); }
+  const text = await res.text();
+  if (!res.ok) throw {code: res.status===429 ? "rate_limited" : "servidor"};
+  if (text.trim() === "Accepted") throw {code:"clave"};
+  return {text, truncated: res.headers.get("x-stop-reason") === "max_tokens"};
+}
+async function preguntarJSON(prompt, opts){
+  const r = await preguntar(prompt, opts);
+  try{ return extraeJSON(r.text); }
+  catch(e){
+    if (r.truncated) throw {code:"truncado"};
+    throw {code:"formato"};
+  }
+}
+function errorIA(e){
+  const c = e && e.code;
+  if (c === "sin_clave") return "Escribe tu código de acceso para hablar con el editor.";
+  if (c === "clave") return "El código de acceso no es correcto o el editor está apagado. Revísalo en el botón Código.";
+  if (c === "red") return "No hay conexión con el editor. Revisa tu internet y vuelve a intentar.";
+  if (c === "tiempo") return "El editor tardó demasiado. Vuelve a intentar en un momento.";
+  if (c === "servidor") return "El editor tuvo un problema. Vuelve a intentar en un minuto.";
+  if (c === "rate_limited") return "El editor necesita un respiro. Espera un minuto y vuelve a intentar.";
+  if (c === "truncado") return "La respuesta salió demasiado larga y se cortó. Intenta de nuevo con un capítulo a la vez.";
+  if (c === "formato") return "El editor respondió en un formato que no pude leer. Vuelve a intentar.";
+  return "Algo falló al hablar con el editor. Vuelve a intentar.";
+}
+
+/* ============================================================
+   1 · Lectura completa (diagnóstico)
+   ============================================================ */
+async function hacerDiagnostico(){
+  if (ocupado) return; ocupado = true; pintarDiagnostico(true);
+  const prompt = `${BASE_EDITOR}
+
+TAREA: Lee el libro completo, como lo haría un editor antes de tocar nada, y entrega un diagnóstico.
+
+Responde SOLO con un objeto JSON válido con esta forma:
+{
+ "resumen": "3 a 5 frases: de qué trata, cómo está escrito, estado general",
+ "voz_del_autor": ["6 a 8 rasgos concretos de cómo escribe y habla el autor, con ejemplos breves entre comillas"],
+ "reglas_estilo": ["6 a 10 reglas de estilo propuestas para este libro (cómo escribir números, nombres, diálogos, qué conservar de su voz, qué evitar)"],
+ "repeticiones": [{"frase":"idea o frase que se repite", "lugares":["C1¶4","C5¶20"], "propuesta":"qué hacer"}],
+ "contradicciones": [{"descripcion":"qué no cuadra", "lugares":["C7¶3"], "pregunta":"qué preguntarle al autor"}],
+ "datos_por_verificar": [{"dice":"lo que está escrito", "sugerencia":"cómo debería ir o qué confirmar", "lugar":"C4¶2"}],
+ "rasgos_ia": [{"rasgo":"tic de escritura que delata a una IA", "ejemplo":"cita breve", "lugar":"C4¶6"}],
+ "preguntas_al_autor": ["3 a 6 preguntas que el autor debe responder antes de editar"]
+}
+Máximo 12 elementos por lista. Citas breves (menos de 20 palabras).
+
+TÍTULO PROVISIONAL: ${S.meta.titulo}
+PÁGINAS PRELIMINARES: ${S.meta.preliminares.join(" / ") || "(ninguna)"}
+
+LIBRO:
+${textoLibro()}`;
+  try{
+    const d = await preguntarJSON(prompt, {tier:"complex"});
+    S.meta.diagnostico = {...d, fecha:new Date().toISOString()};
+    if (Array.isArray(d.voz_del_autor) && !S.meta.voz.length) S.meta.voz = d.voz_del_autor.slice(0,10);
+    guardarMeta();
+    toast("Diagnóstico listo.");
+  }catch(e){ toast(errorIA(e), 6000); }
+  ocupado = false; pintarDiagnostico(); pintarVoz();
+}
+
+function refsHTML(t){
+  return esc(t).replace(/C(\d+)¶(\d+)/g, (m,c,p)=>`<button class="ref" data-ref="${c}-${p}">${m}</button>`);
+}
+function listaRefs(arr){ return (arr||[]).map(r=>refsHTML(r)).join(", "); }
+
+function pintarDiagnostico(cargando=false){
+  const el = $("#diag"); if (!S) return;
+  const total = S.caps.reduce((a,c)=>a+c.ps.reduce((b,p)=>b+palabras(p),0),0);
+  const mayus = S.caps.reduce((a,c)=>a+c.ps.filter(p=>{const l=p.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ]/g,""); return l.length>20 && l.replace(/[^A-ZÁÉÍÓÚÑ]/g,"").length/l.length>.6;}).reduce((b,p)=>b+palabras(p),0),0);
+  const d = S.meta.diagnostico;
+  let h = `<header><span class="mono" style="color:var(--lapiz)">ETAPA 1 · LECTURA COMPLETA</span><h1>${esc(S.meta.titulo)}</h1>
+  <p>Antes de tocar una coma, el editor lee el libro completo y te entrega su diagnóstico. Desde aquí puedes saltar a cualquier párrafo que mencione.</p></header>
+  <div class="cifras">
+    <div class="cifra"><b>${S.caps.length}</b><span>capítulos</span></div>
+    <div class="cifra"><b>${total.toLocaleString("es-MX")}</b><span>palabras</span></div>
+    <div class="cifra"><b>~${Math.round(total/230)+6}</b><span>páginas en 14 × 21 cm</span></div>
+    <div class="cifra"><b>${total?Math.round(mayus/total*100):0}%</b><span>del texto en mayúsculas</span></div>
+  </div>`;
+  if (cargando){
+    h += `<div class="panel"><span class="pensando">El editor está leyendo el libro completo. Tarda uno o dos minutos…</span></div>`;
+  } else if (!d){
+    h += `<div class="panel"><h2>Todavía no hay diagnóstico</h2><p class="muted" style="margin:0">El editor leerá los ${S.caps.length} capítulos y te dirá qué funciona, qué se repite, qué no cuadra y qué suena a máquina.</p><div><button class="btn primario" id="btn-diag">Leer el libro completo</button></div></div>`;
+  } else {
+    h += `<div class="panel"><h2>Resumen del editor</h2><p style="margin:0;line-height:1.6">${refsHTML(d.resumen)}</p>
+      <div class="fila"><button class="btn chico" id="btn-diag">Volver a leer</button><span class="mono muted">Leído el ${new Date(d.fecha).toLocaleDateString("es-MX",{day:"numeric",month:"long"})}</span></div></div>`;
+    if (d.repeticiones?.length) h += `<div class="panel"><h2>Lo que se repite</h2><div class="envoltura-tabla"><table class="tabla"><thead><tr><th>Frase o idea</th><th>Dónde</th><th>Propuesta</th></tr></thead><tbody>${d.repeticiones.map(r=>`<tr><td>${esc(r.frase)}</td><td>${listaRefs(r.lugares)}</td><td>${esc(r.propuesta)}</td></tr>`).join("")}</tbody></table></div></div>`;
+    if (d.contradicciones?.length) h += `<div class="panel"><h2>Lo que no cuadra</h2><ul>${d.contradicciones.map(r=>`<li>${refsHTML(r.descripcion)} ${listaRefs(r.lugares)}<br><span class="muted">Pregunta: ${esc(r.pregunta)}</span></li>`).join("")}</ul></div>`;
+    if (d.rasgos_ia?.length) h += `<div class="panel"><h2>Lo que suena a IA</h2><ul>${d.rasgos_ia.map(r=>`<li><b>${esc(r.rasgo)}.</b> <i>"${esc(r.ejemplo)}"</i> ${refsHTML(r.lugar||"")}</li>`).join("")}</ul></div>`;
+    if (d.datos_por_verificar?.length) h += `<div class="panel"><h2>Nombres y datos por revisar</h2><div class="envoltura-tabla"><table class="tabla"><thead><tr><th>Dice</th><th>Sugerencia</th><th>Dónde</th></tr></thead><tbody>${d.datos_por_verificar.map(r=>`<tr><td>${esc(r.dice)}</td><td>${esc(r.sugerencia)}</td><td>${refsHTML(r.lugar||"")}</td></tr>`).join("")}</tbody></table></div></div>`;
+    if (d.preguntas_al_autor?.length) h += `<div class="panel"><h2>Preguntas para ti</h2><ul>${d.preguntas_al_autor.map(p=>`<li>${refsHTML(p)}</li>`).join("")}</ul><p class="muted" style="margin:0;font-size:13px">Respóndelas en la plática de la etapa de Edición: el editor las toma en cuenta.</p></div>`;
+    if (d.reglas_estilo?.length) h += `<div class="panel"><h2>Reglas de estilo que propone</h2><ul>${d.reglas_estilo.map(p=>`<li>${esc(p)}</li>`).join("")}</ul><div class="fila"><button class="btn" id="btn-pasar-reglas">Pasarlas a mi hoja de estilo</button></div></div>`;
+    h += `<div class="fila"><button class="btn primario" data-ir="libro">Empezar a editar →</button></div>`;
+  }
+  el.innerHTML = h;
+}
+
+/* ============================================================
+   2 · Edición por capítulo
+   ============================================================ */
+function promptRevision(i, etapa, lote){
+  const c = S.caps[i];
+  const comun = `${BASE_EDITOR}
+
+${hojaDeEstilo()}`;
+  const formato = `Responde SOLO con un objeto JSON válido:
+{
+ "comentario": "1 o 2 frases sobre el capítulo",
+ "sugerencias": [
+   {"p": número de párrafo dentro del capítulo (el n de C${i+1}¶n),
+    "tipo": "repetición | contradicción | sobra | mover | voz | suena a IA | claridad | ortografía | puntuación | dato",
+    "original": "fragmento EXACTO copiado del párrafo, letra por letra",
+    "propuesta": "cómo quedaría ese fragmento (cadena vacía si se propone quitarlo)",
+    "porque": "explicación breve para el autor, citando otros párrafos si aplica (ej. C2¶5)"}
+ ]
+}`;
+  if (etapa === "fondo"){
+    return `${comun}
+
+TAREA: Edición de FONDO del capítulo ${i+1} ("${c.titulo}"). Revisa estructura y contenido EN RELACIÓN CON TODO EL LIBRO: ideas o anécdotas repetidas con otros capítulos, contradicciones de hechos, fechas o lugares, párrafos que sobran, que conviene mover o que piden un detalle concreto. No corrijas ortografía ni estilo en esta etapa. Máximo 12 sugerencias, las más importantes primero.
+
+${formato}
+
+LIBRO COMPLETO (contexto):
+${textoLibro()}
+
+CAPÍTULO A REVISAR: C${i+1}`;
+  }
+  if (etapa === "estilo"){
+    return `${comun}
+
+TAREA: Edición de ESTILO del capítulo ${i+1}. Busca frases que suenan a IA (cascadas de frases cortas, "no se trata de X sino de Y", moralejas de cierre, abstracciones sin anécdota), muletillas, oraciones demasiado largas o confusas. La propuesta debe sonar al autor, nunca más elegante que él. No corrijas solo ortografía en esta etapa. Máximo 15 sugerencias.
+
+${formato}
+
+CAPÍTULO:
+${textoCapitulo(i)}`;
+  }
+  // corrección: lote de párrafos
+  return `${comun}
+
+TAREA: CORRECCIÓN ortotipográfica. Para cada párrafo de la lista que lo necesite, devuelve UNA sugerencia con "original" igual al párrafo COMPLETO tal cual y "propuesta" igual al párrafo completo corregido: ortografía, acentos, puntuación, concordancia, mayúsculas sostenidas pasadas a mayúsculas y minúsculas normales, diálogos con raya (—), comillas latinas o inglesas consistentes según la hoja de estilo. No cambies palabras ni el orden de las ideas: solo corrige. Omite los párrafos que ya están bien. En "porque" resume en pocas palabras qué corregiste.
+
+${formato}
+
+PÁRRAFOS:
+${lote.map(j=>`[C${i+1}¶${j+1}] ${c.ps[j]}`).join("\n")}`;
+}
+
+async function revisarCapitulo(){
+  if (ocupado || !S) return;
+  const i = capActual, etapa = etapaActual, c = S.caps[i];
+  ocupado = true; estadoRevision(true);
+  try{
+    let nuevas = [], comentario = "";
+    if (etapa === "correccion"){
+      const lotes = []; let lote = [], w = 0;
+      c.ps.forEach((p,j)=>{ lote.push(j); w += palabras(p); if (w > 650){ lotes.push(lote); lote=[]; w=0; } });
+      if (lote.length) lotes.push(lote);
+      for (let k=0;k<lotes.length;k++){
+        estadoRevision(true, `Corrigiendo ${k+1} de ${lotes.length}…`);
+        const r = await preguntarJSON(promptRevision(i, etapa, lotes[k]), {tier:"default"});
+        nuevas.push(...(r.sugerencias||[]));
+      }
+    } else {
+      const r = await preguntarJSON(promptRevision(i, etapa), {tier: etapa==="fondo" ? "complex" : "default"});
+      nuevas = r.sugerencias || []; comentario = r.comentario || "";
+    }
+    // Quita pendientes anteriores de la misma etapa y agrega las nuevas
+    c.sug = c.sug.filter(s => !(s.etapa === etapa && s.estado === "pendiente"));
+    nuevas.forEach(s => {
+      if (!s.original && !s.propuesta) return;
+      const p = ubicar(c, (parseInt(s.p,10)||1)-1, s.original);
+      if (normaliza(s.original||"") === normaliza(s.propuesta||"")) return;
+      c.sug.push({id:uid(), etapa, p, tipo:s.tipo||ETAPAS[etapa].nombre, original:s.original||"", propuesta:s.propuesta??"", porque:s.porque||"", estado:"pendiente", hilo:[]});
+    });
+    c.revisado[etapa] = new Date().toISOString();
+    if (comentario) c.comentario = {...(c.comentario||{}), [etapa]:comentario};
+    guardarCap(i);
+    toast(nuevas.length ? `El editor dejó ${nuevas.length} notas en este capítulo.` : "El editor no encontró nada que cambiar en esta etapa.");
+  }catch(e){ console.error(e); toast(errorIA(e), 6000); }
+  ocupado = false; estadoRevision(false); pintarLibro();
+}
+function estadoRevision(on, texto){
+  const el = $("#estado-revision"); el.classList.toggle("oculto", !on);
+  if (texto) el.textContent = texto; else el.textContent = "El editor está leyendo…";
+  $("#btn-revisar").disabled = on;
+}
+
+/* Diferencias palabra por palabra */
+function diffHTML(a, b){
+  const A = a.split(/(\s+)/), B = b.split(/(\s+)/);
+  if (A.length * B.length > 250000) return `<del>${esc(a)}</del> <ins>${esc(b)}</ins>`;
+  const n=A.length, m=B.length, L = Array.from({length:n+1},()=>new Uint16Array(m+1));
+  for (let i=n-1;i>=0;i--) for (let j=m-1;j>=0;j--) L[i][j] = A[i]===B[j] ? L[i+1][j+1]+1 : Math.max(L[i+1][j], L[i][j+1]);
+  let i=0,j=0,out="",del="",ins="";
+  const flush=()=>{ if(del) out+=`<del>${esc(del)}</del>`; if(ins) out+=`<ins>${esc(ins)}</ins>`; del=ins=""; };
+  while(i<n && j<m){
+    if (A[i]===B[j]){ flush(); out+=esc(A[i]); i++; j++; }
+    else if (L[i+1][j] >= L[i][j+1]){ del+=A[i++]; }
+    else { ins+=B[j++]; }
+  }
+  while(i<n) del+=A[i++]; while(j<m) ins+=B[j++]; flush();
+  return out;
+}
+
+function encontrar(texto, frag){
+  if (!frag) return -1;
+  let k = texto.indexOf(frag); if (k >= 0) return {i:k, len:frag.length};
+  // tolerante a espacios
+  const re = new RegExp(frag.trim().split(/\s+/).map(w=>w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("\\s+"));
+  const m = texto.match(re); return m ? {i:m.index, len:m[0].length} : -1;
+}
+
+function ubicar(c, pSugerido, original){
+  // Corrige el número de párrafo si el editor se equivocó por poco.
+  const n = c.ps.length, p0 = Math.max(0, Math.min(n-1, pSugerido));
+  if (!original) return p0;
+  const orden = [p0, p0-1, p0+1, p0-2, p0+2, ...Array.from({length:n},(_,k)=>k)];
+  for (const k of orden){ if (k>=0 && k<n && encontrar(c.ps[k], original) !== -1) return k; }
+  return p0;
+}
+function aceptar(sid, propuestaEditada){
+  const c = S.caps[capActual], s = c.sug.find(x=>x.id===sid); if (!s) return;
+  const prop = propuestaEditada ?? s.propuesta;
+  const texto = c.ps[s.p];
+  const pos = encontrar(texto, s.original);
+  if (pos === -1){ toast("Ese fragmento ya cambió. Edita el párrafo a mano con el lápiz.", 5000); return; }
+  let nuevo = (texto.slice(0,pos.i) + prop + texto.slice(pos.i+pos.len)).replace(/\s{2,}/g," ").trim();
+  if (!nuevo){ c.ps.splice(s.p,1); c.sug.forEach(x=>{ if (x!==s && x.p > s.p) x.p--; }); }
+  else c.ps[s.p] = nuevo;
+  s.estado = "aceptada"; s.propuesta = prop;
+  guardarCap(capActual); pintarLibro();
+}
+function rechazar(sid){ const s = S.caps[capActual].sug.find(x=>x.id===sid); if (!s) return; s.estado="rechazada"; guardarCap(capActual); pintarLibro(); }
+function deshacer(sid){ const s = S.caps[capActual].sug.find(x=>x.id===sid); if (!s || s.estado!=="rechazada") return; s.estado="pendiente"; guardarCap(capActual); pintarLibro(); }
+
+async function platicarNota(sid, texto){
+  const c = S.caps[capActual], s = c.sug.find(x=>x.id===sid); if (!s || ocupado) return;
+  s.hilo.push({role:"autor", text:texto}); ocupado = true; pintarNotas();
+  const prompt = `${BASE_EDITOR}
+
+${hojaDeEstilo()}
+
+Estás platicando con el autor sobre UNA nota tuya en el capítulo ${capActual+1}.
+Párrafo C${capActual+1}¶${s.p+1}: "${c.ps[s.p]}"
+Tu nota (${s.tipo}): cambiar "${s.original}" por "${s.propuesta}". Motivo: ${s.porque}
+
+Conversación sobre esta nota:
+${s.hilo.map(m=>(m.role==="autor"?"AUTOR: ":"EDITOR: ")+m.text).join("\n")}
+
+Responde como editor. Si el autor te da información nueva o no le gusta tu propuesta, ofrece una nueva propuesta que respete su voz. Si de la plática sale una regla que conviene aplicar a todo el libro, propónla.
+Responde SOLO con JSON: {"respuesta":"tu respuesta breve al autor", "nueva_propuesta": "texto que reemplazaría a '${s.original.slice(0,60).replace(/"/g,"'")}…' o null", "regla_nueva": "regla de estilo o null"}`;
+  try{
+    const r = await preguntarJSON(prompt, {tier:"default"});
+    s.hilo.push({role:"editor", text:r.respuesta||"", regla:r.regla_nueva||null});
+    if (r.nueva_propuesta && typeof r.nueva_propuesta === "string") s.propuesta = r.nueva_propuesta;
+  }catch(e){ s.hilo.push({role:"editor", text:errorIA(e)}); }
+  ocupado = false; guardarCap(capActual); pintarNotas();
+}
+
+/* Plática general */
+async function enviarChat(texto){
+  if (!texto.trim() || ocupado || !S) return;
+  const i = capActual;
+  S.meta.chat.push({role:"autor", text:texto, cap:i}); ocupado = true; pintarChat(true);
+  const hist = S.meta.chat.slice(-14).map(m=>(m.role==="autor"?"AUTOR: ":"EDITOR: ")+m.text).join("\n");
+  const indice = S.caps.map((c,k)=>`C${k+1}: ${c.num} — ${c.titulo}`).join("\n");
+  const prompt = `${BASE_EDITOR}
+
+${hojaDeEstilo()}
+
+${S.meta.diagnostico ? "Tu diagnóstico del libro: "+S.meta.diagnostico.resumen : ""}
+
+ÍNDICE DEL LIBRO:
+${indice}
+
+El autor está trabajando ahora el capítulo ${i+1}:
+${textoCapitulo(i)}
+
+CONVERSACIÓN RECIENTE:
+${hist}
+
+Responde al último mensaje del AUTOR. Si te pide revisar algo concreto del capítulo ${i+1}, deja notas en "sugerencias" (fragmento EXACTO del párrafo en "original"). Si te pide algo de otro capítulo, dile que lo abra para trabajarlo. Si de lo que dice sale una regla de estilo para todo el libro, propónla en "regla_nueva".
+Responde SOLO con JSON: {"respuesta":"texto para el autor", "regla_nueva": "texto o null", "sugerencias":[{"p":n,"tipo":"...","original":"...","propuesta":"...","porque":"..."}]}`;
+  try{
+    const r = await preguntarJSON(prompt, {tier:"default"});
+    S.meta.chat.push({role:"editor", text:r.respuesta||"", regla:r.regla_nueva||null, cap:i});
+    const c = S.caps[i];
+    (r.sugerencias||[]).forEach(s=>{
+      if (!s.original) return;
+      const p = ubicar(c, (parseInt(s.p,10)||1)-1, s.original);
+      c.sug.push({id:uid(), etapa:"platica", p, tipo:s.tipo||"plática", original:s.original, propuesta:s.propuesta??"", porque:s.porque||"", estado:"pendiente", hilo:[]});
+    });
+    if ((r.sugerencias||[]).length) guardarCap(i);
+  }catch(e){ S.meta.chat.push({role:"editor", text:errorIA(e), cap:i}); }
+  if (S.meta.chat.length > 60) S.meta.chat = S.meta.chat.slice(-60);
+  ocupado = false; guardarMeta(); pintarChat(); pintarNotas(); pintarManuscrito();
+}
+
+function agregarRegla(texto, origen){
+  texto = normaliza(texto); if (!texto) return;
+  if (S.meta.estilo.some(r=>normaliza(r.texto).toLowerCase()===texto.toLowerCase())) { toast("Esa regla ya está en tu hoja de estilo."); return; }
+  S.meta.estilo.push({id:uid(), texto, origen:origen||"plática"});
+  guardarMeta(); pintarVoz(); toast("Agregada a tu hoja de estilo.");
+}
+
+/* ---------- Pintado de la mesa ---------- */
+function pintarIndice(){
+  const el = $("#indice");
+  el.innerHTML = `<h3>Capítulos</h3>` + S.caps.map((c,i)=>{
+    const pend = c.sug.filter(s=>s.estado==="pendiente").length;
+    const marcas = ["fondo","estilo","correccion"].map(e=>`<span class="pill ${c.revisado?.[e]?"hecho":""}" title="${ETAPAS[e].nombre}${c.revisado?.[e]?" revisado":" pendiente"}">${ETAPAS[e].nombre[0]}</span>`).join("") + (pend?`<span class="pill pend">${pend} notas</span>`:"");
+    return `<button data-cap="${i}" aria-current="${i===capActual}"><span class="rom">${esc(c.num.replace(/^Capítulo\s+/,""))}</span><span class="tit">${esc(c.titulo||"Sin título")}</span><span class="marcas">${marcas}</span></button>`;
+  }).join("");
+  $("#sel-cap").innerHTML = S.caps.map((c,i)=>`<option value="${i}" ${i===capActual?"selected":""}>${esc(c.num)} · ${esc(c.titulo)}</option>`).join("");
+}
+
+function pintarManuscrito(){
+  const c = S.caps[capActual], mapa = mapaPaginas();
+  const pend = c.sug.filter(s=>s.estado==="pendiente");
+  const html = c.ps.map((p,j)=>{
+    const notas = pend.filter(s=>s.p===j);
+    let txt = esc(p);
+    // marca el primer fragmento de cada nota pendiente
+    const marcas = notas.map(s=>encontrar(p, s.original)).filter(x=>x!==-1 && x.len < p.length).sort((a,b)=>a.i-b.i);
+    if (marcas.length){
+      let out="", k=0;
+      marcas.forEach(m=>{ if (m.i < k) return; out += esc(p.slice(k,m.i)) + "<mark>"+esc(p.slice(m.i,m.i+m.len))+"</mark>"; k = m.i+m.len; });
+      txt = out + esc(p.slice(k));
+    }
+    return `<div class="parr ${notas.length?"con-nota":""}" id="p-${j}" data-p="${j}">
+      <div class="num">¶${j+1}<small>pág. ${mapa[capActual][j]}</small></div>
+      <div class="txt">${txt}</div>
+      <button class="lapiz" data-editar="${j}" title="Editar este párrafo a mano" aria-label="Editar párrafo ${j+1}">✎</button>
+    </div>`;
+  }).join("");
+  $("#manuscrito").innerHTML = `<article class="hoja">
+    <div class="cap-num">${esc(c.num)}</div>
+    <h2 id="titulo-cap" title="Doble clic para cambiar el título">${esc(c.titulo||"Sin título")}</h2>
+    ${html}
+  </article>`;
+}
+
+function pintarNotas(){
+  const c = S.caps[capActual];
+  $("#ayuda-etapa").textContent = ETAPAS[etapaActual].ayuda;
+  document.querySelectorAll(".segmentado button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.etapa===etapaActual));
+  const rev = c.revisado?.[etapaActual];
+  $("#btn-revisar").textContent = rev ? "Volver a revisar" : "Revisar este capítulo";
+  const lista = c.sug.filter(s => s.etapa===etapaActual || s.etapa==="platica")
+    .sort((a,b)=> (a.estado==="pendiente"?0:1)-(b.estado==="pendiente"?0:1) || a.p-b.p);
+  const coment = c.comentario?.[etapaActual];
+  let h = coment ? `<p class="vacio" style="color:var(--tinta)">${refsHTML(coment)}</p>` : "";
+  if (!lista.length){
+    h += `<p class="vacio">${rev ? "Sin notas pendientes en esta etapa." : `Pide al editor una revisión de ${ETAPAS[etapaActual].nombre.toLowerCase()} de este capítulo, o pregúntale algo en la plática de abajo.`}</p>`;
+  }
+  h += lista.map(s=>{
+    const vigente = encontrar(c.ps[s.p]||"", s.original) !== -1;
+    const diff = s.estado==="aceptada" ? `<ins>${esc(s.propuesta)}</ins>` : diffHTML(s.original, s.propuesta);
+    const hilo = s.hilo.length ? `<div class="hilo">${s.hilo.map(m=>`<div class="msg ${m.role}">${refsHTML(m.text)}${m.regla?`<div class="regla"><span>Regla: ${esc(m.regla)}</span><button class="btn chico" data-regla="${esc(m.regla)}">Guardar</button></div>`:""}</div>`).join("")}</div>` : "";
+    const acciones = s.estado==="pendiente" ? `<div class="fila">
+        <button class="btn chico primario" data-aceptar="${s.id}" ${vigente?"":"disabled"}>Aceptar</button>
+        <button class="btn chico" data-rechazar="${s.id}">Rechazar</button>
+        <button class="btn chico" data-platicar="${s.id}">Platicarlo</button>
+      </div>
+      <form class="escribir oculto" data-form-hilo="${s.id}" style="padding:0;border:none"><label class="oculto" for="h-${s.id}">Respuesta</label><textarea id="h-${s.id}" placeholder="Ej.: Prefiero dejar la frase como estaba, así lo digo yo."></textarea><button class="btn chico primario" type="submit">Enviar</button></form>`
+      : s.estado==="rechazada" ? `<div class="fila"><span class="mono muted">Rechazada</span><button class="btn chico" data-deshacer="${s.id}">Reconsiderar</button></div>`
+      : `<span class="mono" style="color:var(--ok)">Aceptada</span>`;
+    return `<div class="nota ${s.estado}" id="n-${s.id}">
+      <div class="meta"><span class="tipo">${esc(s.tipo)}</span><button data-ir-p="${s.p}">C${capActual+1}¶${s.p+1}</button></div>
+      <div class="diff">${diff || "<i class='muted'>(quitar)</i>"}</div>
+      ${s.porque?`<p class="porque">${refsHTML(s.porque)}</p>`:""}
+      ${!vigente && s.estado==="pendiente" ? `<span class="aviso">El párrafo cambió y ya no encuentro el fragmento original.</span>`:""}
+      ${hilo}${acciones}
+    </div>`;
+  }).join("");
+  $("#notas").innerHTML = h;
+}
+
+function pintarChat(pensando=false){
+  const msgs = S.meta.chat;
+  let h = msgs.length ? "" : `<p class="vacio">Pregúntale lo que quieras sobre el capítulo abierto: "¿esto se repite?", "en el párrafo 8 quiero decir que fue en Mérida", "¿cómo empiezo mejor este capítulo?".</p>`;
+  h += msgs.map(m=>`<div class="msg ${m.role}">${m.cap!=null && m.role==="autor"?`<span class="mono muted">C${m.cap+1} · </span>`:""}${refsHTML(m.text)}${m.regla?`<div class="regla"><span>Regla: ${esc(m.regla)}</span><button class="btn chico" data-regla="${esc(m.regla)}">Guardar</button></div>`:""}</div>`).join("");
+  if (pensando) h += `<div class="pensando">El editor está pensando…</div>`;
+  const el = $("#mensajes"); el.innerHTML = h; el.scrollTop = el.scrollHeight;
+}
+
+function pintarLibro(){ if (!S) return; pintarIndice(); pintarManuscrito(); pintarNotas(); pintarChat(); }
+
+function irAParrafo(c, p){
+  if (c !== capActual){ capActual = c; pintarLibro(); }
+  irA("libro");
+  requestAnimationFrame(()=>{
+    const el = $("#p-"+p); if (!el) return;
+    el.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"center"});
+    el.classList.add("destello"); setTimeout(()=>el.classList.remove("destello"), 1600);
+  });
+}
+
+/* ============================================================
+   3 · Tu voz (hoja de estilo)
+   ============================================================ */
+function pintarVoz(){
+  if (!S) return;
+  const m = S.meta;
+  $("#voz").innerHTML = `<header><span class="mono" style="color:var(--lapiz)">ETAPA 3 · TU VOZ</span><h1>Cómo suena tu libro</h1>
+    <p>El editor consulta esta hoja en cada revisión. Lo que acuerden en la plática se guarda aquí, y tú puedes corregirlo o borrarlo cuando quieras.</p></header>
+  <div class="panel"><h2>Así escribes tú</h2>
+    ${m.voz.length ? `<ul>${m.voz.map(v=>`<li>${esc(v)}</li>`).join("")}</ul>` : `<p class="muted" style="margin:0">Aparecerá cuando el editor haga la lectura completa.</p>`}
+  </div>
+  <div class="panel"><h2>Hoja de estilo del libro</h2>
+    <div class="reglas">${m.estilo.map(r=>`<div class="regla-item"><textarea data-regla-id="${r.id}" aria-label="Regla">${esc(r.texto)}</textarea><button class="btn chico rojo" data-borrar-regla="${r.id}">Quitar</button><span class="origen">Viene de: ${esc(r.origen)}</span></div>`).join("") || `<p class="muted" style="margin:0">Todavía no hay reglas. Ejemplo: "Los números del uno al diez van con letra."</p>`}</div>
+    <form class="fila" id="form-regla"><label for="nueva-regla" class="oculto">Nueva regla</label><input id="nueva-regla" style="flex:1;min-width:220px;border:1px solid var(--linea);border-radius:6px;padding:8px 10px;background:var(--hoja)" placeholder="Escribe una regla nueva"><button class="btn primario" type="submit">Agregar</button></form>
+  </div>`;
+}
+
+/* ============================================================
+   4 · Diseño: maquetación 14×21 cm y portadas
+   ============================================================ */
+const PAG = {W:140, H:210, mSup:20, mInf:22, mInt:19, mExt:15};
+let PDFCACHE = null; // jsPDF con la fuente cargada, solo para medir
+let FUENTES_B64 = null;
+
+async function cargarFuentes(){
+  if (FUENTES_B64) return FUENTES_B64;
+  const nombres = {normal:"fonts/EBGaramond-Regular.ttf", italic:"fonts/EBGaramond-Italic.ttf", bold:"fonts/EBGaramond-SemiBold.ttf"};
+  const out = {};
+  for (const [k,u] of Object.entries(nombres)){
+    const buf = await (await fetch(u)).arrayBuffer();
+    let s = ""; const b = new Uint8Array(buf);
+    for (let i=0;i<b.length;i+=0x8000) s += String.fromCharCode.apply(null, b.subarray(i,i+0x8000));
+    out[k] = btoa(s);
+  }
+  FUENTES_B64 = out; return out;
+}
+async function nuevoPDF(){
+  const f = await cargarFuentes();
+  const doc = new jspdf.jsPDF({unit:"mm", format:[PAG.W, PAG.H], compress:true});
+  doc.addFileToVFS("EBG-R.ttf", f.normal); doc.addFont("EBG-R.ttf","EBG","normal");
+  doc.addFileToVFS("EBG-I.ttf", f.italic); doc.addFont("EBG-I.ttf","EBG","italic");
+  doc.addFileToVFS("EBG-B.ttf", f.bold); doc.addFont("EBG-B.ttf","EBG","bold");
+  doc.setFont("EBG","normal");
+  return doc;
+}
+
+/* Maqueta: devuelve páginas con líneas posicionadas (mm). Se usa igual para la vista previa y para el PDF. */
+function maquetar(pdf){
+  const pt = S.meta.diseno.tamano || 11.5;
+  const mm = pt * 0.3528, lh = mm * 1.42, sangria = 5;
+  const paginas = [];
+  let pg, y;
+  const nueva = (tipo="texto") => { pg = {lineas:[], tipo, num:paginas.length+1}; paginas.push(pg); y = PAG.mSup + mm; return pg; };
+  const x0 = () => (pg.num % 2 === 1) ? PAG.mInt : PAG.mExt;
+  const ancho = PAG.W - PAG.mInt - PAG.mExt;
+  const limite = PAG.H - PAG.mInf;
+  const medir = (t, estilo="normal", tam=pt) => { pdf.setFont("EBG", estilo); pdf.setFontSize(tam); return pdf.getTextWidth(t); };
+  const linea = (t, opts) => pg.lineas.push({t, x:opts.x, y:opts.y, tam:opts.tam||pt, estilo:opts.estilo||"normal", ancho:opts.ancho||0, just:!!opts.just, centro:!!opts.centro, espaciado:opts.espaciado||0});
+
+  // Portadilla
+  nueva("preliminar");
+  const titulo = S.meta.titulo || "Sin título";
+  const tl = partir(titulo, ancho, t=>medir(t,"bold",pt*2));
+  let yy = 70; tl.forEach(t=>{ linea(t,{x:PAG.W/2,y:yy,tam:pt*2,estilo:"bold",centro:true}); yy += pt*2*0.3528*1.25; });
+  if (S.meta.subtitulo){ partir(S.meta.subtitulo, ancho, t=>medir(t,"italic",pt*1.1)).forEach(t=>{ yy+=2; linea(t,{x:PAG.W/2,y:yy+4,tam:pt*1.1,estilo:"italic",centro:true}); yy+=pt*1.1*0.3528*1.4; }); }
+  if (S.meta.autor) linea(S.meta.autor.toUpperCase(),{x:PAG.W/2,y:150,tam:pt*0.9,centro:true,espaciado:0.6});
+  nueva("preliminar"); // reverso en blanco
+  if (S.meta.dedicatoria){
+    nueva("preliminar");
+    let yd = 75;
+    S.meta.dedicatoria.split(/\n+/).forEach(par=>partir(par, ancho-20, t=>medir(t,"italic")).forEach(t=>{ linea(t,{x:PAG.W/2,y:yd,estilo:"italic",centro:true}); yd += lh; }));
+    nueva("preliminar");
+  }
+
+  const inicioCap = [];
+  S.caps.forEach((c,ci)=>{
+    nueva("apertura");
+    if (pg.num % 2 === 0) { pg.tipo = "preliminar"; nueva("apertura"); } // capítulos abren en página impar
+    inicioCap[ci] = pg.num;
+    linea(c.num.toUpperCase(), {x:PAG.W/2, y:58, tam:pt*0.85, centro:true, espaciado:0.8});
+    let yt = 70;
+    partir(c.titulo||"", ancho-10, t=>medir(t,"bold",pt*1.75)).forEach(t=>{ linea(t,{x:PAG.W/2,y:yt,tam:pt*1.75,estilo:"bold",centro:true}); yt += pt*1.75*0.3528*1.25; });
+    y = Math.max(yt + 14, 92);
+    c.ps.forEach((p,pi)=>{
+      const conSangria = pi > 0;
+      const palabrasP = p.split(/\s+/).filter(Boolean);
+      const lineas = [];
+      let actual = [], anchoDisp = ancho - (conSangria ? sangria : 0);
+      for (const w of palabrasP){
+        const prueba = actual.length ? actual.join(" ")+" "+w : w;
+        if (medir(prueba) <= anchoDisp || !actual.length){ actual.push(w); }
+        else { lineas.push({ws:actual, sangria: lineas.length===0 && conSangria}); actual=[w]; anchoDisp = ancho; }
+      }
+      if (actual.length) lineas.push({ws:actual, sangria: lineas.length===0 && conSangria, ultima:true});
+      lineas.forEach((l,li)=>{
+        if (y > limite){ nueva("texto"); }
+        const x = x0() + (l.sangria ? sangria : 0);
+        const w = ancho - (l.sangria ? sangria : 0);
+        linea(l.ws.join(" "), {x, y, ancho:w, just: !l.ultima && l.ws.length > 1});
+        y += lh;
+      });
+    });
+  });
+  return {paginas, inicioCap, pt};
+}
+function partir(texto, ancho, medirFn){
+  const ws = String(texto).split(/\s+/).filter(Boolean), out=[]; let a=[];
+  ws.forEach(w=>{ const t = a.length ? a.join(" ")+" "+w : w; if (medirFn(t) <= ancho || !a.length) a.push(w); else { out.push(a.join(" ")); a=[w]; } });
+  if (a.length) out.push(a.join(" ")); return out;
+}
+
+let MAQUETA = null;
+async function rehacerMaqueta(){
+  if (!S) return;
+  if (!PDFCACHE) PDFCACHE = await nuevoPDF();
+  MAQUETA = maquetar(PDFCACHE);
+}
+
+function pintarPaginasPrevias(limite){
+  if (!MAQUETA) return "";
+  const k = 3; // px por mm
+  return MAQUETA.paginas.slice(0, limite).map(pg=>{
+    const ls = pg.lineas.map(l=>{
+      const fs = l.tam*0.3528*k; const top = (l.y*k) - fs*0.8;
+      const estilo = l.estilo==="bold" ? "font-weight:600;" : l.estilo==="italic" ? "font-style:italic;" : "";
+      const esp = l.espaciado ? `letter-spacing:${l.espaciado*k}px;` : "";
+      if (l.centro) return `<div class="ln" style="left:0;width:100%;text-align:center;top:${top}px;font-size:${fs}px;${estilo}${esp}">${esc(l.t)}</div>`;
+      if (l.just) return `<div class="ln j" style="left:${l.x*k}px;width:${l.ancho*k}px;top:${top}px;font-size:${fs}px;height:${fs*1.2}px;${estilo}">${esc(l.t)}</div>`;
+      return `<div class="ln" style="left:${l.x*k}px;top:${top}px;font-size:${fs}px;${estilo}">${esc(l.t)}</div>`;
+    }).join("");
+    const folio = pg.tipo==="texto" ? `<div class="folio">${pg.num}</div>` : "";
+    return `<div class="pag" aria-label="Página ${pg.num}">${ls}${folio}</div>`;
+  }).join("");
+}
+
+/* Portadas */
+function limpiarSVG(svg){
+  try{
+    const d = new DOMParser().parseFromString(svg, "image/svg+xml");
+    const raiz = d.documentElement; if (!raiz || raiz.nodeName.toLowerCase() !== "svg") return "";
+    raiz.querySelectorAll("script,foreignObject,iframe,image,use,a,style").forEach(n=>n.remove());
+    raiz.querySelectorAll("*").forEach(n=>[...n.attributes].forEach(a=>{ if (/^on/i.test(a.name) || /href/i.test(a.name)) n.removeAttribute(a.name); }));
+    [...raiz.attributes].forEach(a=>{ if (/^on/i.test(a.name)) raiz.removeAttribute(a.name); });
+    raiz.setAttribute("viewBox", raiz.getAttribute("viewBox") || "0 0 140 210");
+    raiz.setAttribute("preserveAspectRatio","xMidYMid slice");
+    raiz.removeAttribute("width"); raiz.removeAttribute("height");
+    raiz.setAttribute("class","ilus");
+    return new XMLSerializer().serializeToString(raiz);
+  }catch(e){ return ""; }
+}
+function colorSeguro(c, def){
+  let h = String(c||"").trim();
+  if (/^#[0-9a-f]{3}$/i.test(h)) h = "#"+h.slice(1).split("").map(x=>x+x).join("");
+  return /^#[0-9a-f]{6}$/i.test(h) ? h.toLowerCase() : def;
+}
+
+function portadaHTML(tipo){
+  const p = S.meta.diseno.portadas?.[tipo]; if (!p) return "";
+  const m = S.meta;
+  const fondo = colorSeguro(p.fondo, tipo==="tipografica"?"#0f1f3d":"#e9e3d6");
+  const tinta = colorSeguro(p.tinta, tipo==="tipografica"?"#f4efe4":"#1a1a1a");
+  const acento = colorSeguro(p.acento, tinta);
+  const ilus = tipo==="ilustrada" ? limpiarSVG(p.svg||"") : "";
+  const orn = tipo==="tipografica" ? `<svg viewBox="0 0 120 20" width="120" height="20" aria-hidden="true" style="margin:14px auto 0;display:block"><line x1="0" y1="10" x2="48" y2="10" stroke="${acento}" stroke-width="1"/><circle cx="60" cy="10" r="4" fill="none" stroke="${acento}" stroke-width="1.2"/><line x1="72" y1="10" x2="120" y2="10" stroke="${acento}" stroke-width="1"/></svg>` : "";
+  const banda = tipo==="ilustrada" ? `background:linear-gradient(${fondo}ee, ${fondo}00 38%, ${fondo}00 75%, ${fondo}ee);` : "";
+  return `<div class="portada" style="background:${fondo};color:${tinta}">${ilus}
+    <div class="textos" style="${banda}"><div><div class="t">${esc(m.titulo)}</div>${m.subtitulo?`<div class="s">${esc(m.subtitulo)}</div>`:""}${orn}</div><div class="a">${esc(m.autor||"")}</div></div></div>`;
+}
+
+async function proponerPortadas(){
+  if (ocupado || !S) return; ocupado = true; pintarDiseno(true);
+  const d = S.meta.diagnostico;
+  const prompt = `${BASE_EDITOR}
+
+Ahora actúas como DISEÑADOR de portadas del sello. El libro: "${S.meta.titulo}"${S.meta.subtitulo?` — ${S.meta.subtitulo}`:""}, de ${S.meta.autor||"el autor"}.
+${d ? "De qué trata: "+d.resumen : "Inicio del libro:\n"+S.caps[0].ps.slice(0,6).join("\n")}
+Capítulos: ${S.caps.map(c=>c.titulo).join(" · ")}
+
+Propón DOS portadas para un libro de 14 × 21 cm que se imprimirá para la familia:
+1) "tipografica": solo tipografía y color, sobria, de editorial clásica.
+2) "ilustrada": con una ilustración plana y sencilla (formas geométricas, pocos colores, nada de texto dentro del dibujo) inspirada en un símbolo o momento concreto del libro. Deja libre el tercio superior para el título y una franja abajo para el autor.
+
+Responde SOLO con JSON:
+{"tipografica":{"fondo":"#hex","tinta":"#hex","acento":"#hex","porque":"1 frase"},
+ "ilustrada":{"concepto":"qué representa","fondo":"#hex","tinta":"#hex","porque":"1 frase","svg":"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 210'>...</svg>"},
+ "subtitulo_sugerido":"subtítulo breve o null"}
+El SVG: viewBox 0 0 140 210, solo path, rect, circle, ellipse, polygon, line, g con fill/stroke; sin texto, sin imágenes, sin scripts; menos de 4000 caracteres.`;
+  try{
+    const r = await preguntarJSON(prompt, {tier:"complex"});
+    S.meta.diseno.portadas = {tipografica:r.tipografica||null, ilustrada:r.ilustrada||null};
+    if (r.subtitulo_sugerido && !S.meta.subtitulo) S.meta.diseno.subtituloSugerido = r.subtitulo_sugerido;
+    if (!S.meta.diseno.elegida) S.meta.diseno.elegida = "tipografica";
+    guardarMeta();
+  }catch(e){ toast(errorIA(e), 6000); }
+  ocupado = false; pintarDiseno();
+}
+
+async function pintarDiseno(cargando=false){
+  if (!S) return;
+  const m = S.meta, dz = m.diseno;
+  const portadas = dz.portadas;
+  let h = `<header><span class="mono" style="color:var(--lapiz)">ETAPA 4 · DISEÑO Y PORTADA</span><h1>Así se verá tu libro</h1>
+    <p>Formato 14 × 21 cm, letra EB Garamond, márgenes de espejo y capítulos que abren en página derecha. La vista previa usa exactamente la misma maqueta que el PDF de imprenta.</p></header>
+  <div class="panel"><h2>Datos de la portada</h2>
+    <div class="campos">
+      <div class="campo"><label for="f-titulo">Título</label><input id="f-titulo" value="${esc(m.titulo)}"></div>
+      <div class="campo"><label for="f-autor">Autor</label><input id="f-autor" value="${esc(m.autor)}" placeholder="Nombre como aparecerá en la portada"></div>
+      <div class="campo"><label for="f-sub">Subtítulo</label><input id="f-sub" value="${esc(m.subtitulo)}" placeholder="${esc(dz.subtituloSugerido||"Opcional")}"></div>
+      <div class="campo"><label for="f-tam">Tamaño de letra</label><select id="f-tam">${[10.5,11,11.5,12,13].map(t=>`<option value="${t}" ${t==dz.tamano?"selected":""}>${t} pt${t>=12?" · lectura cómoda":""}</option>`).join("")}</select></div>
+    </div>
+    <div class="campo"><label for="f-ded">Dedicatoria</label><textarea id="f-ded" rows="2" placeholder="Opcional. Ej.: Para Lau, Rod y Vero.">${esc(m.dedicatoria)}</textarea></div>
+  </div>
+  <div class="panel"><h2>Portada</h2>`;
+  if (cargando) h += `<span class="pensando">El diseñador está preparando dos propuestas…</span>`;
+  else if (!portadas) h += `<p class="muted" style="margin:0">El diseñador te propone dos portadas a partir de lo que trabajaron: una solo con tipografía y otra con ilustración.</p><div><button class="btn primario" id="btn-portadas">Proponer portadas</button></div>`;
+  else {
+    h += `<div class="portadas" role="radiogroup" aria-label="Elige una portada">
+      ${["tipografica","ilustrada"].filter(t=>portadas[t]).map(t=>`<div class="opcion-portada" role="radio" tabindex="0" aria-checked="${dz.elegida===t}" data-elegir="${t}">
+        ${portadaHTML(t)}
+        <b>${t==="tipografica"?"Tipográfica":"Con ilustración"}</b>
+        <p>${esc(portadas[t].porque||portadas[t].concepto||"")}</p>
+      </div>`).join("")}
+    </div><div class="fila"><button class="btn chico" id="btn-portadas">Pedir otras dos</button></div>`;
+  }
+  h += `</div><div class="panel"><h2>Interiores</h2><p class="escala-nota" id="nota-maqueta">Preparando la maqueta…</p><div class="paginas" id="paginas"></div></div>
+  <div class="fila"><button class="btn primario" data-ir="imprenta">Ir a imprenta →</button></div>`;
+  $("#diseno").innerHTML = h;
+  try{
+    await rehacerMaqueta();
+    $("#paginas").innerHTML = pintarPaginasPrevias(14);
+    $("#nota-maqueta").textContent = `${MAQUETA.paginas.length} páginas de interiores (más portada y contraportada). Aquí ves las primeras 14 a escala.`;
+  }catch(e){ console.error(e); $("#nota-maqueta").textContent = "No pude preparar la vista previa de interiores."; }
+}
+
+/* ============================================================
+   5 · Imprenta: PDF, Word y respaldo
+   ============================================================ */
+function pintarImprenta(){
+  if (!S) return;
+  const pend = S.caps.reduce((a,c)=>a+c.sug.filter(s=>s.estado==="pendiente").length,0);
+  const faltan = S.caps.map((c,i)=>({i,c})).filter(x=>!x.c.revisado?.correccion);
+  $("#imprenta").innerHTML = `<header><span class="mono" style="color:var(--lapiz)">ETAPA 5 · IMPRENTA</span><h1>Listo para imprimir</h1>
+    <p>El PDF trae portada, interiores en 14 × 21 cm y contraportada. Es el archivo que se lleva a una imprenta digital para un tiraje corto. El Word es por si alguien quiere seguir corrigiendo a mano.</p></header>
+  <div class="cifras">
+    <div class="cifra"><b>${pend}</b><span>notas sin decidir</span></div>
+    <div class="cifra"><b>${S.caps.length - faltan.length} / ${S.caps.length}</b><span>capítulos con corrección final</span></div>
+    <div class="cifra"><b>${MAQUETA?MAQUETA.paginas.length+2:"—"}</b><span>páginas totales</span></div>
+  </div>
+  ${faltan.length ? `<div class="panel"><h2>Antes de imprenta</h2><p style="margin:0">Faltan por pasar por corrección: ${faltan.map(x=>`<button class="ref" data-ref="${x.i+1}-1">${esc(x.c.num)}</button>`).join(", ")}.</p></div>` : ""}
+  <div class="panel"><h2>Archivos</h2>
+    <div class="fila">
+      <button class="btn primario" id="btn-pdf">Descargar PDF para imprenta</button>
+      <button class="btn" id="btn-docx">Descargar Word (.docx)</button>
+      <button class="btn" id="btn-json">Descargar respaldo</button>
+    </div>
+    <p class="muted" style="margin:0;font-size:13px">Pide en la imprenta: 14 × 21 cm, interiores en papel bond o cultural de 90 g, portada en couché de 300 g con laminado mate, encuadernación rústica (pegado).</p>
+  </div>
+  <div class="panel"><h2>Empezar con otro manuscrito</h2>
+    <p class="muted" style="margin:0">Tu avance vive en esta computadora y en este navegador. Descarga un respaldo de vez en cuando; con él puedes seguir en otra computadora. Borrar aquí quita el libro de la app. Descarga antes un respaldo si lo quieres conservar.</p>
+    <div class="fila"><label class="btn" for="cargar-respaldo">Cargar un respaldo</label><input type="file" id="cargar-respaldo" accept=".json" class="oculto"><button class="btn rojo" id="btn-nuevo">Borrar y subir otro</button></div>
+  </div>`;
+}
+
+async function guardarArchivo(nombre, datos){
+  try{
+    const blob = datos instanceof Blob ? datos : new Blob([datos], {type:"application/octet-stream"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = nombre; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 5000);
+    if (window.__descargas) window.__descargas[nombre] = blob;
+  }catch(e){ toast("No se pudo descargar el archivo. Intenta de nuevo.", 5000); }
+}
+function nombreBase(){ return (S.meta.titulo||"libro").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^\w]+/g,"-").replace(/^-|-$/g,"").toLowerCase().slice(0,60) || "libro"; }
+
+async function svgAImagen(svg, fondo, wpx, hpx){
+  return new Promise((res, rej)=>{
+    const limpio = limpiarSVG(svg).replace('class="ilus"','').replace(/<svg /, `<svg width="${wpx}" height="${hpx}" `);
+    if (!limpio) return res(null);
+    const src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(limpio.includes("xmlns=") ? limpio : limpio.replace("<svg ","<svg xmlns=\"http://www.w3.org/2000/svg\" "));
+    const img = new Image();
+    img.onload = () => { const cv = document.createElement("canvas"); cv.width=wpx; cv.height=hpx; const cx = cv.getContext("2d"); cx.fillStyle=fondo; cx.fillRect(0,0,wpx,hpx); cx.drawImage(img,0,0,wpx,hpx); res(cv.toDataURL("image/jpeg",0.92)); };
+    img.onerror = () => res(null);
+    img.src = src;
+  });
+}
+function hexRGB(h){ h=h.replace("#",""); if(h.length===3) h=h.split("").map(c=>c+c).join(""); return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]; }
+
+async function dibujarPortada(pdf, contra=false){
+  const dz = S.meta.diseno, tipo = dz.elegida, p = dz.portadas?.[tipo];
+  const fondo = colorSeguro(p?.fondo, "#0f1f3d"), tinta = colorSeguro(p?.tinta, "#f4efe4"), acento = colorSeguro(p?.acento, tinta);
+  pdf.setFillColor(...hexRGB(fondo)); pdf.rect(0,0,PAG.W,PAG.H,"F");
+  if (contra){
+    pdf.setTextColor(...hexRGB(tinta)); pdf.setFont("EBG","italic"); pdf.setFontSize(11);
+    pdf.setFont("EBG","normal"); pdf.setFontSize(9); pdf.text(S.meta.autor||"", PAG.W/2, PAG.H-20, {align:"center"});
+    return;
+  }
+  if (tipo==="ilustrada" && p?.svg){
+    const img = await svgAImagen(p.svg, fondo, 1654, 2480);
+    if (img) pdf.addImage(img, "JPEG", 0, 0, PAG.W, PAG.H);
+  }
+  pdf.setTextColor(...hexRGB(tinta));
+  pdf.setFont("EBG","bold"); pdf.setFontSize(30);
+  let y = 42;
+  partir(S.meta.titulo||"", 112, t=>pdf.getTextWidth(t)).forEach(t=>{ pdf.text(t, PAG.W/2, y, {align:"center"}); y += 12; });
+  if (S.meta.subtitulo){ pdf.setFont("EBG","italic"); pdf.setFontSize(13); partir(S.meta.subtitulo, 110, t=>pdf.getTextWidth(t)).forEach(t=>{ pdf.text(t, PAG.W/2, y+2, {align:"center"}); y+=6.5; }); }
+  if (tipo==="tipografica"){ pdf.setDrawColor(...hexRGB(acento)); pdf.setLineWidth(0.3); pdf.line(PAG.W/2-30, y+8, PAG.W/2-5, y+8); pdf.circle(PAG.W/2, y+8, 2); pdf.line(PAG.W/2+5, y+8, PAG.W/2+30, y+8); }
+  pdf.setFont("EBG","normal"); pdf.setFontSize(12); pdf.setCharSpace(1.2);
+  pdf.text((S.meta.autor||"").toUpperCase(), PAG.W/2, PAG.H-24, {align:"center"});
+  pdf.setCharSpace(0);
+}
+
+async function exportarPDF(){
+  if (!S) return;
+  if (!S.meta.diseno.portadas){ toast("Primero elige una portada en Diseño.", 5000); irA("diseno"); return; }
+  toast("Armando el PDF…", 8000);
+  try{
+    const pdf = await nuevoPDF();
+    const maq = maquetar(pdf);
+    await dibujarPortada(pdf);
+    maq.paginas.forEach(pg=>{
+      pdf.addPage([PAG.W, PAG.H]);
+      pdf.setTextColor(26,26,26);
+      pg.lineas.forEach(l=>{
+        pdf.setFont("EBG", l.estilo); pdf.setFontSize(l.tam);
+        if (l.espaciado) pdf.setCharSpace(l.espaciado);
+        if (l.centro) pdf.text(l.t, PAG.W/2, l.y, {align:"center"});
+        else if (l.just){
+          const ws = l.t.split(" "); const total = ws.reduce((a,w)=>a+pdf.getTextWidth(w),0);
+          const hueco = (l.ancho - total) / (ws.length-1); let x = l.x;
+          ws.forEach(w=>{ pdf.text(w, x, l.y); x += pdf.getTextWidth(w) + hueco; });
+        } else pdf.text(l.t, l.x, l.y);
+        if (l.espaciado) pdf.setCharSpace(0);
+      });
+      if (pg.tipo==="texto"){ pdf.setFont("EBG","normal"); pdf.setFontSize(9); pdf.setTextColor(110,110,110); pdf.text(String(pg.num), PAG.W/2, PAG.H-11, {align:"center"}); }
+    });
+    if ((maq.paginas.length+1) % 2 === 1) pdf.addPage([PAG.W, PAG.H]); // contraportada en página par
+    pdf.addPage([PAG.W, PAG.H]); await dibujarPortada(pdf, true);
+    const blob = pdf.output("blob");
+    await guardarArchivo(nombreBase()+"-imprenta-14x21.pdf", blob);
+  }catch(e){ console.error(e); toast("No pude armar el PDF.", 5000); }
+}
+
+async function exportarDOCX(){
+  if (!S) return;
+  try{
+    const D = window.docx, cm = 567;
+    const pt = S.meta.diseno.tamano || 11.5;
+    const hijos = [];
+    hijos.push(new D.Paragraph({alignment:D.AlignmentType.CENTER, spacing:{before:2400, after:240}, children:[new D.TextRun({text:S.meta.titulo||"", bold:true, size:Math.round(pt*4)})]}));
+    if (S.meta.subtitulo) hijos.push(new D.Paragraph({alignment:D.AlignmentType.CENTER, children:[new D.TextRun({text:S.meta.subtitulo, italics:true, size:Math.round(pt*2.2)})]}));
+    if (S.meta.autor) hijos.push(new D.Paragraph({alignment:D.AlignmentType.CENTER, spacing:{before:1200}, children:[new D.TextRun({text:S.meta.autor.toUpperCase(), size:Math.round(pt*1.8)})]}));
+    if (S.meta.dedicatoria) hijos.push(new D.Paragraph({pageBreakBefore:true, alignment:D.AlignmentType.CENTER, spacing:{before:2400}, children:[new D.TextRun({text:S.meta.dedicatoria, italics:true, size:Math.round(pt*2)})]}));
+    S.caps.forEach(c=>{
+      hijos.push(new D.Paragraph({pageBreakBefore:true, alignment:D.AlignmentType.CENTER, spacing:{before:1800, after:120}, children:[new D.TextRun({text:c.num.toUpperCase(), size:Math.round(pt*1.7), characterSpacing:40})]}));
+      hijos.push(new D.Paragraph({heading:D.HeadingLevel.HEADING_1, alignment:D.AlignmentType.CENTER, spacing:{after:600}, children:[new D.TextRun({text:c.titulo||"", bold:true, size:Math.round(pt*3.5), font:"EB Garamond", color:"1A1A1A"})]}));
+      c.ps.forEach((p,i)=>hijos.push(new D.Paragraph({alignment:D.AlignmentType.JUSTIFIED, indent:i?{firstLine:Math.round(0.5*cm)}:undefined, spacing:{line:Math.round(240*1.3), after:0}, children:[new D.TextRun({text:p, size:Math.round(pt*2)})]})));
+    });
+    const doc = new D.Document({
+      creator:"Taller Editorial · Sótano Bajo", title:S.meta.titulo,
+      styles:{default:{document:{run:{font:"EB Garamond", size:Math.round(pt*2)}}}},
+      sections:[{properties:{page:{size:{width:Math.round(14*cm), height:Math.round(21*cm)}, margin:{top:Math.round(2*cm), bottom:Math.round(2.2*cm), left:Math.round(1.9*cm), right:Math.round(1.5*cm)}}},
+        footers:{default:new D.Footer({children:[new D.Paragraph({alignment:D.AlignmentType.CENTER, children:[new D.TextRun({children:[D.PageNumber.CURRENT], size:18})]})]})},
+        children:hijos}]
+    });
+    const blob = await D.Packer.toBlob(doc);
+    await guardarArchivo(nombreBase()+"-editado.docx", blob);
+  }catch(e){ console.error(e); toast("No pude armar el Word.", 5000); }
+}
+
+/* ============================================================
+   Navegación y eventos
+   ============================================================ */
+function irA(v){
+  if (!S && v !== "inicio") v = "inicio";
+  vistaActual = v;
+  document.querySelectorAll(".vista").forEach(s=>s.classList.toggle("activa", s.id==="v-"+v));
+  document.querySelectorAll("#nav button").forEach(b=>b.setAttribute("aria-current", b.dataset.vista===v));
+  $("#nav").classList.toggle("oculto", !S);
+  if (v==="diseno") pintarDiseno();
+  if (v==="imprenta") { pintarImprenta(); if (!MAQUETA) rehacerMaqueta().then(pintarImprenta).catch(()=>{}); }
+  if (location.hash.slice(1) !== v) try{ history.replaceState(null, "", "#"+v); }catch(e){}
+}
+function pintarTodo(){
+  if (!S) return;
+  $("#titulo-libro").textContent = S.meta.titulo;
+  pintarDiagnostico(); pintarLibro(); pintarVoz();
+}
+
+document.addEventListener("click", async e=>{
+  const t = e.target.closest("button,[data-elegir]"); if (!t) return;
+  const d = t.dataset;
+  if (d.vista) return irA(d.vista);
+  if (d.ir) return irA(d.ir);
+  if (d.ref){ const [c,p] = d.ref.split("-").map(Number); if (S.caps[c-1]) irAParrafo(c-1, Math.max(0, Math.min(S.caps[c-1].ps.length-1, p-1))); return; }
+  if (d.cap){ capActual = +d.cap; pintarLibro(); $("#manuscrito").scrollTop = 0; return; }
+  if (d.etapa){ etapaActual = d.etapa; pintarNotas(); return; }
+  if (d.aceptar) return aceptar(d.aceptar);
+  if (d.rechazar) return rechazar(d.rechazar);
+  if (d.deshacer) return deshacer(d.deshacer);
+  if (d.platicar){ const f = document.querySelector(`[data-form-hilo="${d.platicar}"]`); f.classList.toggle("oculto"); f.querySelector("textarea").focus(); return; }
+  if (d.irP != null){ irAParrafo(capActual, +d.irP); return; }
+  if (d.regla){ agregarRegla(d.regla, "plática con el editor"); return; }
+  if (d.borrarRegla){ S.meta.estilo = S.meta.estilo.filter(r=>r.id!==d.borrarRegla); guardarMeta(); pintarVoz(); return; }
+  if (d.elegir){ S.meta.diseno.elegida = d.elegir; guardarMeta(); document.querySelectorAll("[data-elegir]").forEach(x=>x.setAttribute("aria-checked", x.dataset.elegir===d.elegir)); return; }
+  if (d.editar != null){
+    const j = +d.editar, cont = $("#p-"+j+" .txt"); if (!cont || cont.querySelector("textarea")) return;
+    const ta = document.createElement("textarea"); ta.value = S.caps[capActual].ps[j]; ta.id = "edit-"+j; ta.setAttribute("aria-label","Texto del párrafo");
+    const fila = document.createElement("div"); fila.className="fila"; fila.style.marginTop="6px";
+    fila.innerHTML = `<button class="btn chico primario" data-guardar-p="${j}">Guardar</button><button class="btn chico" data-cancelar-p>Cancelar</button><button class="btn chico rojo" data-borrar-p="${j}">Quitar párrafo</button>`;
+    cont.replaceChildren(ta, fila); ta.focus(); return;
+  }
+  if (d.guardarP != null){ const j=+d.guardarP, v = normaliza($("#edit-"+j).value); if (v){ S.caps[capActual].ps[j] = v; guardarCap(capActual); } pintarManuscrito(); pintarNotas(); return; }
+  if (d.cancelarP != null) return pintarManuscrito();
+  if (d.borrarP != null){ const j=+d.borrarP, c=S.caps[capActual]; c.ps.splice(j,1); c.sug = c.sug.filter(s=>s.p!==j); c.sug.forEach(s=>{ if (s.p>j) s.p--; }); guardarCap(capActual); pintarLibro(); return; }
+  switch(t.id){
+    case "btn-clave": return abrirClave();
+    case "btn-cerrar-clave": return $("#dlg-clave").close();
+    case "btn-diag": return hacerDiagnostico();
+    case "btn-revisar": return revisarCapitulo();
+    case "btn-limpiar-chat": S.meta.chat = []; guardarMeta(); return pintarChat();
+    case "btn-pasar-reglas": (S.meta.diagnostico.reglas_estilo||[]).forEach(r=>{ if (!S.meta.estilo.some(x=>x.texto===r)) S.meta.estilo.push({id:uid(), texto:r, origen:"lectura completa"}); }); guardarMeta(); pintarVoz(); toast("Reglas agregadas a tu hoja de estilo."); return;
+    case "btn-portadas": return proponerPortadas();
+    case "btn-pdf": return exportarPDF();
+    case "btn-docx": return exportarDOCX();
+    case "btn-json": return guardarArchivo(nombreBase()+"-respaldo.json", JSON.stringify(S));
+    case "btn-nuevo": {
+      if (t.dataset.confirmar !== "1"){ t.dataset.confirmar = "1"; t.textContent = "Sí, borrar el libro"; setTimeout(()=>{ t.dataset.confirmar=""; t.textContent="Borrar y subir otro"; }, 5000); return; }
+      await Almacen.borrarTodo(S.caps.length); S = null; MAQUETA = null; irA("inicio"); $("#titulo-libro").textContent = "Sótano Bajo"; return;
+    }
+  }
+});
+document.addEventListener("keydown", e=>{
+  const t = e.target;
+  if (t.matches?.("[data-elegir]") && (e.key==="Enter" || e.key===" ")){ e.preventDefault(); t.click(); }
+  if (t.id === "txt-chat" && e.key === "Enter" && !e.shiftKey){ e.preventDefault(); $("#form-chat").requestSubmit(); }
+});
+document.addEventListener("submit", e=>{
+  e.preventDefault();
+  const f = e.target;
+  if (f.id === "form-clave"){ try{ localStorage.setItem("taller:clave", $("#in-clave").value.trim()); }catch(err){} $("#dlg-clave").close(); toast("Código guardado."); return; }
+  if (f.id === "form-chat"){ const ta = $("#txt-chat"); const v = ta.value; ta.value=""; enviarChat(v); return; }
+  if (f.id === "form-regla"){ const i = $("#nueva-regla"); agregarRegla(i.value, "escrita por ti"); return; }
+  if (f.dataset.formHilo){ const ta = f.querySelector("textarea"); const v = ta.value.trim(); if (!v) return; ta.value=""; platicarNota(f.dataset.formHilo, v); }
+});
+let tCampos = null;
+document.addEventListener("input", e=>{
+  const t = e.target; if (!S) return;
+  if (t.dataset.reglaId){ const r = S.meta.estilo.find(x=>x.id===t.dataset.reglaId); if (r){ r.texto = t.value; guardarMeta(); } return; }
+  const mapa = {"f-titulo":"titulo","f-autor":"autor","f-sub":"subtitulo","f-ded":"dedicatoria"};
+  if (mapa[t.id]){
+    S.meta[mapa[t.id]] = t.value; guardarMeta();
+    document.querySelectorAll(".opcion-portada").forEach(op=>{ const tipo = op.dataset.elegir; const viejo = op.querySelector(".portada"); if (viejo){ const tmp = document.createElement("div"); tmp.innerHTML = portadaHTML(tipo); viejo.replaceWith(tmp.firstElementChild); } });
+    if (t.id==="f-titulo") $("#titulo-libro").textContent = t.value;
+    clearTimeout(tCampos); tCampos = setTimeout(async ()=>{ await rehacerMaqueta(); const pg = $("#paginas"); if (pg) pg.innerHTML = pintarPaginasPrevias(14); }, 600);
+  }
+});
+document.addEventListener("change", async e=>{
+  const t = e.target;
+  if (t.id === "archivo") return alSubir(t.files[0]);
+  if (t.id === "sel-cap"){ capActual = +t.value; pintarLibro(); return; }
+  if (t.id === "f-tam"){ S.meta.diseno.tamano = +t.value; guardarMeta(); pintarDiseno(); return; }
+  if (t.id === "cargar-respaldo"){
+    try{ const d = JSON.parse(await t.files[0].text()); if (!d.meta || !Array.isArray(d.caps)) throw 0; const viejos = S ? S.caps.length : 0; S = d; if (viejos > S.caps.length) await Almacen.borrarTodo(viejos); guardarTodo(); capActual=0; MAQUETA=null; pintarTodo(); irA("diagnostico"); toast("Respaldo cargado."); }
+    catch(err){ toast("Ese archivo no es un respaldo de esta app.", 5000); }
+  }
+});
+document.addEventListener("focusout", e=>{
+  if (e.target.id === "titulo-cap" && e.target.isContentEditable){
+    const v = normaliza(e.target.textContent); e.target.contentEditable = "false";
+    if (v && S){ S.caps[capActual].titulo = v; guardarCap(capActual); pintarIndice(); }
+  }
+});
+document.addEventListener("dblclick", e=>{ if (e.target.id === "titulo-cap"){ e.target.contentEditable = "true"; e.target.focus(); } });
+const zona = $("#soltar");
+["dragenter","dragover"].forEach(ev=>zona.addEventListener(ev, e=>{ e.preventDefault(); zona.classList.add("sobre"); }));
+["dragleave","drop"].forEach(ev=>zona.addEventListener(ev, e=>{ e.preventDefault(); zona.classList.remove("sobre"); }));
+zona.addEventListener("drop", e=>{ const f = e.dataTransfer.files[0]; if (f) alSubir(f); });
+
+/* ============================================================
+   Arranque
+   ============================================================ */
+(async function(){
+  const hashInicial = location.hash.slice(1);
+  irA("inicio");
+  marcaGuardado("Conectando…");
+  const conDB = await Almacen.iniciar();
+  marcaGuardado("Se guarda en esta computadora");
+  try{
+    const d = await cargar();
+    if (d){ S = d; pintarTodo(); const h = hashInicial; irA(["diagnostico","libro","voz","diseno","imprenta"].includes(h) ? h : (S.meta.diagnostico ? "libro" : "diagnostico")); marcaGuardado("Guardado en esta computadora"); }
+  }catch(e){ marcaGuardado("No pude cargar tu libro guardado"); }
+})();
+</script>
+</body>
+</html>
