@@ -267,6 +267,11 @@ body.demo main{height:calc(100% - 61px - 38px)}
         <h1>Tu libro ya está escrito. Aquí lo editamos juntos.</h1>
         <p class="lead">Sube tu manuscrito en Word. El editor lo lee completo, te va dejando notas página por página y tú decides qué cambia. Al final lo dejamos maquetado y listo para la imprenta.</p>
       </div>
+      <div class="panel oculto" id="panel-migrar">
+        <h2>Tienes un libro en la demostración</h2>
+        <p class="muted" style="margin:0">Encontramos lo que trabajaste en la demostración en esta computadora. Tráelo para seguir donde te quedaste, ahora con el editor de verdad.</p>
+        <div class="fila"><button class="btn primario" id="btn-migrar">Seguir con mi libro</button></div>
+      </div>
       <div class="soltar" id="soltar">
         <b>Arrastra aquí tu manuscrito</b>
         <span class="muted">Word (.docx) o texto (.txt). Los capítulos se detectan solos si empiezan con "Capítulo I", "Capítulo II"…</span>
@@ -456,6 +461,27 @@ function guardarMeta(){ if (S) Almacen.guardar("libro", {...S.meta, numCaps:S.ca
 function guardarCap(i){ if (S) Almacen.guardar("cap-"+i, S.caps[i]); }
 function guardarTodo(){ guardarMeta(); S.caps.forEach((_,i)=>guardarCap(i)); }
 
+function libroDemo(){
+  try{ const m = localStorage.getItem("taller-demo:libro"); return m ? JSON.parse(m) : null; }catch(e){ return null; }
+}
+async function migrarDemo(){
+  const meta = libroDemo(); if (!meta) return;
+  const caps = [];
+  for (let i=0;i<(meta.numCaps||0);i++){
+    try{ const c = JSON.parse(localStorage.getItem("taller-demo:cap-"+i)||"null"); if (c) caps.push(c); }catch(e){}
+  }
+  if (!caps.length){ toast("No pude leer el avance de la demostración.", 5000); return; }
+  // Se conserva el texto editado, las reglas y el diseño. Se quitan las respuestas de ejemplo
+  // para que el editor real haga su propia lectura y revisión.
+  caps.forEach(c=>{ c.sug = (c.sug||[]).filter(x=>x.estado!=="pendiente"); c.revisado = {}; c.comentario = {}; });
+  const m = {...meta}; delete m.numCaps;
+  m.diagnostico = null; m.chat = [];
+  m.diseno = {...(m.diseno||{}), portadas:null, elegida:null};
+  m.migradoDeDemo = new Date().toISOString();
+  S = {meta:m, caps}; capActual = 0;
+  guardarTodo(); pintarTodo(); irA("diagnostico");
+  toast("Listo: aquí está tu libro con todos tus cambios.", 5000);
+}
 async function cargar(){
   const meta = await Almacen.leer("libro");
   if (!meta) return null;
@@ -1386,6 +1412,7 @@ document.addEventListener("click", async e=>{
   if (d.borrarP != null){ const j=+d.borrarP, c=S.caps[capActual]; c.ps.splice(j,1); c.sug = c.sug.filter(s=>s.p!==j); c.sug.forEach(s=>{ if (s.p>j) s.p--; }); guardarCap(capActual); pintarLibro(); return; }
   switch(t.id){
     case "btn-clave": return abrirClave();
+    case "btn-migrar": return migrarDemo();
     case "btn-cerrar-clave": return $("#dlg-clave").close();
     case "btn-diag": return hacerDiagnostico();
     case "btn-revisar": return revisarCapitulo();
@@ -1462,6 +1489,7 @@ zona.addEventListener("drop", e=>{ const f = e.dataTransfer.files[0]; if (f) alS
     const d = await cargar();
     if (d){ S = d; pintarTodo(); const h = hashInicial; irA(["diagnostico","libro","voz","diseno","imprenta"].includes(h) ? h : (S.meta.diagnostico ? "libro" : "diagnostico")); marcaGuardado("Guardado en esta computadora"); }
   }catch(e){ marcaGuardado("No pude cargar tu libro guardado"); }
+  if (!S && !DEMO && libroDemo()) $("#panel-migrar").classList.remove("oculto");
 })();
 </script>
 </body>
