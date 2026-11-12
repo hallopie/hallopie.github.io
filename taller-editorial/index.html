@@ -231,6 +231,17 @@ dialog::backdrop{background:rgba(15,31,61,.45)}
 .banda-demo{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:baseline;padding:8px 20px;background:var(--marca);color:var(--tinta);font-size:13.5px;border-bottom:1px solid var(--linea)}
 .banda-demo b{color:var(--lapiz);letter-spacing:.06em;text-transform:uppercase;font-size:12px}
 body.demo main{height:calc(100% - 61px - 38px)}
+.foto{margin:10px 0 14px 56px;display:grid;gap:6px;justify-items:center;border:1px dashed var(--linea);border-radius:6px;padding:12px;background:var(--papel)}
+.foto img{max-width:100%;max-height:360px;border-radius:2px;display:block}
+.foto.medio img{max-width:60%}
+.foto input{width:100%;max-width:520px;text-align:center;font-family:var(--font-libro);font-style:italic;font-size:16px;border:1px solid transparent;background:none;padding:4px 6px;border-radius:4px}
+.foto input:hover,.foto input:focus{border-color:var(--linea);background:var(--hoja)}
+.foto .fila{justify-content:center}
+.parr .camara{position:absolute;right:-30px;top:30px;opacity:0;border:none;background:none;color:var(--tinta-2);font-size:14px;padding:4px}
+.parr:hover .camara,.parr .camara:focus{opacity:1}
+.ayuda-fotos{font-size:12.5px;color:var(--tinta-2);margin:-12px 0 18px}
+@media (max-width:760px){.foto{margin-left:0}.parr .lapiz,.parr .camara{opacity:1;right:-6px}}
+.pag img{position:absolute;object-fit:cover}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--tinta);color:var(--hoja);padding:10px 16px;border-radius:8px;font-size:14px;max-width:min(90vw,560px);z-index:20;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .oculto{display:none !important}
 </style>
@@ -332,6 +343,7 @@ body.demo main{height:calc(100% - 61px - 38px)}
   <section class="vista" id="v-imprenta"><div class="pagina"><div class="columna" id="imprenta"></div></div></section>
 </main>
 <div class="toast oculto" id="toast" role="status"></div>
+<input type="file" id="input-foto" accept="image/*" class="oculto" aria-label="Elegir foto">
 
 <script src="mammoth.browser.min.js"></script>
 <script src="jspdf.umd.min.js"></script>
@@ -497,6 +509,75 @@ async function cargar(){
 }
 
 /* ============================================================
+   Fotos: se guardan en la base del navegador (IndexedDB), no en localStorage
+   ============================================================ */
+const Fotos = {
+  _db:null, cache:{},
+  abrir(){
+    if (this._db) return this._db;
+    this._db = new Promise((res, rej)=>{
+      const r = indexedDB.open("taller-fotos", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("fotos");
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    });
+    return this._db;
+  },
+  async tx(modo, fn){ const db = await this.abrir(); return new Promise((res, rej)=>{ const t = db.transaction("fotos", modo); const st = t.objectStore("fotos"); const r = fn(st); t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); }); },
+  guardar(id, blob){ return this.tx("readwrite", st=>st.put(blob, id)); },
+  leer(id){ return this.tx("readonly", st=>st.get(id)); },
+  borrar(id){ delete this.cache[id]; return this.tx("readwrite", st=>st.delete(id)); },
+  async url(id){
+    if (this.cache[id]) return this.cache[id];
+    const b = await this.leer(id); if (!b) return null;
+    return (this.cache[id] = URL.createObjectURL(b));
+  },
+  async dataURL(id){
+    const b = await this.leer(id); if (!b) return null;
+    return new Promise(res=>{ const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b); });
+  }
+};
+async function comprimirFoto(archivo){
+  const url = URL.createObjectURL(archivo);
+  try{
+    const img = await new Promise((res, rej)=>{ const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const max = 1800, k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.round(img.naturalWidth*k), h = Math.round(img.naturalHeight*k);
+    const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+    const cx = cv.getContext("2d"); cx.fillStyle = "#fff"; cx.fillRect(0,0,w,h); cx.drawImage(img, 0, 0, w, h);
+    const blob = await new Promise(res=>cv.toBlob(res, "image/jpeg", 0.85));
+    return {blob, w, h};
+  } finally { URL.revokeObjectURL(url); }
+}
+let destinoFoto = null; // {cap, despues}
+async function agregarFoto(archivo){
+  if (!archivo || !destinoFoto || !S) return;
+  const {cap, despues} = destinoFoto; destinoFoto = null;
+  toast("Preparando la foto…", 4000);
+  try{
+    const {blob, w, h} = await comprimirFoto(archivo);
+    const id = "f-"+uid()+uid();
+    await Fotos.guardar(id, blob);
+    const c = S.caps[cap]; c.fotos = c.fotos || [];
+    c.fotos.push({id, despues, pie:"", ancho:"completo", w, h});
+    guardarCap(cap); MAQUETA = null;
+    if (cap === capActual) pintarManuscrito();
+    toast("Foto agregada. Escríbele un pie si quieres.");
+    requestAnimationFrame(()=>{ const el = document.querySelector(`[data-pie="${id}"]`); if (el){ el.scrollIntoView({block:"center"}); el.focus(); } });
+  }catch(e){ console.error(e); toast("No pude abrir esa imagen. Usa una foto en JPG o PNG.", 6000); }
+}
+function quitarParrafo(c, j){
+  c.ps.splice(j,1);
+  c.sug = c.sug.filter(s=>s.p!==j || s.estado!=="pendiente"); c.sug.forEach(s=>{ if (s.p>j) s.p--; });
+  (c.fotos||[]).forEach(f=>{ if (f.despues >= j) f.despues = Math.max(-1, f.despues-1); });
+}
+async function pintarFotosVisibles(){
+  for (const img of document.querySelectorAll("img[data-foto]")){
+    if (img.getAttribute("src")) continue;
+    const u = await Fotos.url(img.dataset.foto); if (u) img.src = u; else img.alt = "Esta foto no está en esta computadora";
+  }
+}
+
+/* ============================================================
    Lectura del manuscrito
    ============================================================ */
 const RE_CAP = /^cap[ií]tulo\s+([ivxlc]+|\d+)\b\.?\s*(.*)$/i;
@@ -570,7 +651,8 @@ function hojaDeEstilo(){
 }
 function textoCapitulo(i){
   const c = S.caps[i];
-  return `### C${i+1} — ${c.num}: ${c.titulo}\n` + c.ps.map((p,j)=>`[C${i+1}¶${j+1}] ${p}`).join("\n");
+  const fotos = (c.fotos||[]).map(f=>`(foto ${f.despues<0?"al inicio":"después de ¶"+(f.despues+1)}${f.pie?`, pie: «${f.pie}»`:""})`).join(" ");
+  return `### C${i+1} — ${c.num}: ${c.titulo}\n` + c.ps.map((p,j)=>`[C${i+1}¶${j+1}] ${p}`).join("\n") + (fotos ? `\nFotos del capítulo: ${fotos}` : "");
 }
 function textoLibro(){ return S.caps.map((_,i)=>textoCapitulo(i)).join("\n\n"); }
 
@@ -825,7 +907,7 @@ function aceptar(sid, propuestaEditada){
   const pos = encontrar(texto, s.original);
   if (pos === -1){ toast("Ese fragmento ya cambió. Edita el párrafo a mano con el lápiz.", 5000); return; }
   let nuevo = (texto.slice(0,pos.i) + prop + texto.slice(pos.i+pos.len)).replace(/\s{2,}/g," ").trim();
-  if (!nuevo){ c.ps.splice(s.p,1); c.sug.forEach(x=>{ if (x!==s && x.p > s.p) x.p--; }); }
+  if (!nuevo){ const j = s.p; s.estado = "aceptada"; quitarParrafo(c, j); s.p = Math.max(0, j-1); }
   else c.ps[s.p] = nuevo;
   s.estado = "aceptada"; s.propuesta = prop;
   guardarCap(capActual); pintarLibro();
@@ -914,6 +996,19 @@ function pintarIndice(){
   $("#sel-cap").innerHTML = S.caps.map((c,i)=>`<option value="${i}" ${i===capActual?"selected":""}>${esc(c.num)} · ${esc(c.titulo)}</option>`).join("");
 }
 
+function fotosDespues(c, j){
+  return (c.fotos||[]).filter(f=>f.despues===j).map(f=>`<figure class="foto ${f.ancho==="medio"?"medio":""}">
+      <img data-foto="${f.id}" alt="${esc(f.pie||"Foto del libro")}">
+      <label class="oculto" for="pie-${f.id}">Pie de foto</label>
+      <input id="pie-${f.id}" data-pie="${f.id}" value="${esc(f.pie)}" placeholder="Escribe un pie de foto (opcional)">
+      <div class="fila">
+        <button class="btn chico" data-mover-foto="${f.id}:-1" title="Subir un párrafo">↑</button>
+        <button class="btn chico" data-mover-foto="${f.id}:1" title="Bajar un párrafo">↓</button>
+        <button class="btn chico" data-ancho-foto="${f.id}">${f.ancho==="medio"?"Hacerla grande":"Hacerla chica"}</button>
+        <button class="btn chico rojo" data-quitar-foto="${f.id}">Quitar</button>
+      </div>
+    </figure>`).join("");
+}
 function pintarManuscrito(){
   const c = S.caps[capActual], mapa = mapaPaginas();
   const pend = c.sug.filter(s=>s.estado==="pendiente");
@@ -931,13 +1026,17 @@ function pintarManuscrito(){
       <div class="num">¶${j+1}<small>pág. ${mapa[capActual][j]}</small></div>
       <div class="txt">${txt}</div>
       <button class="lapiz" data-editar="${j}" title="Editar este párrafo a mano" aria-label="Editar párrafo ${j+1}">✎</button>
-    </div>`;
+      <button class="camara" data-foto-aqui="${j}" title="Poner una foto después de este párrafo" aria-label="Poner foto después del párrafo ${j+1}">📷</button>
+    </div>${fotosDespues(c, j)}`;
   }).join("");
   $("#manuscrito").innerHTML = `<article class="hoja">
     <div class="cap-num">${esc(c.num)}</div>
     <h2 id="titulo-cap" title="Doble clic para cambiar el título">${esc(c.titulo||"Sin título")}</h2>
+    <p class="ayuda-fotos">Para ilustrar: pasa el mouse sobre un párrafo y toca 📷 para poner una foto después de él. <button class="ref" data-foto-aqui="-1">Poner una al inicio del capítulo</button></p>
+    ${fotosDespues(c, -1)}
     ${html}
   </article>`;
+  pintarFotosVisibles();
 }
 
 function pintarNotas(){
@@ -1053,7 +1152,22 @@ function maquetar(pdf){
   const ancho = PAG.W - PAG.mInt - PAG.mExt;
   const limite = PAG.H - PAG.mInf;
   const medir = (t, estilo="normal", tam=pt) => { pdf.setFont("EBG", estilo); pdf.setFontSize(tam); return pdf.getTextWidth(t); };
-  const linea = (t, opts) => pg.lineas.push({t, x:opts.x, y:opts.y, tam:opts.tam||pt, estilo:opts.estilo||"normal", ancho:opts.ancho||0, just:!!opts.just, centro:!!opts.centro, espaciado:opts.espaciado||0});
+  const linea = (t, opts) => pg.lineas.push({t, x:opts.x, y:opts.y, tam:opts.tam||pt, estilo:opts.estilo||"normal", ancho:opts.ancho||0, just:!!opts.just, centro:!!opts.centro, cx:opts.cx, espaciado:opts.espaciado||0});
+  const altoTexto = limite - PAG.mSup;
+  const ponerFotos = (c, j) => (c.fotos||[]).filter(f=>f.despues===j).forEach(f=>{
+    let w = ancho * (f.ancho==="medio" ? 0.62 : 1), h = w * (f.h||3) / (f.w||4);
+    const maxH = altoTexto * 0.62; if (h > maxH){ w = w*maxH/h; h = maxH; }
+    const tamPie = pt*0.85, lhPie = tamPie*0.3528*1.35;
+    const pie = f.pie ? partir(f.pie, ancho-8, t=>medir(t,"italic",tamPie)) : [];
+    const total = 2 + h + (pie.length ? 3 + pie.length*lhPie : 0) + 4;
+    let top = y - mm + 2;
+    if (top + total > limite){ nueva("texto"); top = PAG.mSup; }
+    const cx = x0() + ancho/2;
+    pg.lineas.push({img:f.id, x:cx - w/2, y:top, w, h});
+    let yp = top + h + 3 + tamPie*0.3528;
+    pie.forEach(t=>{ linea(t,{x:cx, cx, y:yp, tam:tamPie, estilo:"italic", centro:true}); yp += lhPie; });
+    y = (pie.length ? yp - lhPie : top + h) + 5 + mm;
+  });
 
   // Portadilla
   nueva("preliminar");
@@ -1079,6 +1193,7 @@ function maquetar(pdf){
     let yt = 70;
     partir(c.titulo||"", ancho-10, t=>medir(t,"bold",pt*1.75)).forEach(t=>{ linea(t,{x:PAG.W/2,y:yt,tam:pt*1.75,estilo:"bold",centro:true}); yt += pt*1.75*0.3528*1.25; });
     y = Math.max(yt + 14, 92);
+    ponerFotos(c, -1);
     c.ps.forEach((p,pi)=>{
       const conSangria = pi > 0;
       const palabrasP = p.split(/\s+/).filter(Boolean);
@@ -1097,6 +1212,7 @@ function maquetar(pdf){
         linea(l.ws.join(" "), {x, y, ancho:w, just: !l.ultima && l.ws.length > 1});
         y += lh;
       });
+      ponerFotos(c, pi);
     });
   });
   return {paginas, inicioCap, pt};
@@ -1119,10 +1235,13 @@ function pintarPaginasPrevias(limite){
   const k = 3; // px por mm
   return MAQUETA.paginas.slice(0, limite).map(pg=>{
     const ls = pg.lineas.map(l=>{
+      if (l.img) return `<img data-foto="${l.img}" alt="" style="left:${l.x*k}px;top:${l.y*k}px;width:${l.w*k}px;height:${l.h*k}px">`;
       const fs = l.tam*0.3528*k; const top = (l.y*k) - fs*0.8;
       const estilo = l.estilo==="bold" ? "font-weight:600;" : l.estilo==="italic" ? "font-style:italic;" : "";
       const esp = l.espaciado ? `letter-spacing:${l.espaciado*k}px;` : "";
-      if (l.centro) return `<div class="ln" style="left:0;width:100%;text-align:center;top:${top}px;font-size:${fs}px;${estilo}${esp}">${esc(l.t)}</div>`;
+      if (l.centro) return l.cx!=null
+        ? `<div class="ln" style="left:${l.cx*k-300}px;width:600px;text-align:center;top:${top}px;font-size:${fs}px;${estilo}${esp}">${esc(l.t)}</div>`
+        : `<div class="ln" style="left:0;width:100%;text-align:center;top:${top}px;font-size:${fs}px;${estilo}${esp}">${esc(l.t)}</div>`;
       if (l.just) return `<div class="ln j" style="left:${l.x*k}px;width:${l.ancho*k}px;top:${top}px;font-size:${fs}px;height:${fs*1.2}px;${estilo}">${esc(l.t)}</div>`;
       return `<div class="ln" style="left:${l.x*k}px;top:${top}px;font-size:${fs}px;${estilo}">${esc(l.t)}</div>`;
     }).join("");
@@ -1225,7 +1344,7 @@ async function pintarDiseno(cargando=false){
   $("#diseno").innerHTML = h;
   try{
     await rehacerMaqueta();
-    $("#paginas").innerHTML = pintarPaginasPrevias(14);
+    $("#paginas").innerHTML = pintarPaginasPrevias(14); pintarFotosVisibles();
     $("#nota-maqueta").textContent = `${MAQUETA.paginas.length} páginas de interiores (más portada y contraportada). Aquí ves las primeras 14 a escala.`;
   }catch(e){ console.error(e); $("#nota-maqueta").textContent = "No pude preparar la vista previa de interiores."; }
 }
@@ -1314,21 +1433,24 @@ async function exportarPDF(){
   try{
     const pdf = await nuevoPDF();
     const maq = maquetar(pdf);
+    const fotosPDF = {};
+    for (const pg of maq.paginas) for (const l of pg.lineas) if (l.img && !fotosPDF[l.img]) fotosPDF[l.img] = await Fotos.dataURL(l.img);
     await dibujarPortada(pdf);
     maq.paginas.forEach(pg=>{
       pdf.addPage([PAG.W, PAG.H]);
       pdf.setTextColor(26,26,26);
-      pg.lineas.forEach(l=>{
+      for (const l of pg.lineas){
+        if (l.img){ const du = fotosPDF[l.img]; if (du) pdf.addImage(du, "JPEG", l.x, l.y, l.w, l.h); continue; }
         pdf.setFont("EBG", l.estilo); pdf.setFontSize(l.tam);
         if (l.espaciado) pdf.setCharSpace(l.espaciado);
-        if (l.centro) pdf.text(l.t, PAG.W/2, l.y, {align:"center"});
+        if (l.centro) pdf.text(l.t, l.cx!=null ? l.cx : PAG.W/2, l.y, {align:"center"});
         else if (l.just){
           const ws = l.t.split(" "); const total = ws.reduce((a,w)=>a+pdf.getTextWidth(w),0);
           const hueco = (l.ancho - total) / (ws.length-1); let x = l.x;
           ws.forEach(w=>{ pdf.text(w, x, l.y); x += pdf.getTextWidth(w) + hueco; });
         } else pdf.text(l.t, l.x, l.y);
         if (l.espaciado) pdf.setCharSpace(0);
-      });
+      }
       if (pg.tipo==="texto"){ pdf.setFont("EBG","normal"); pdf.setFontSize(9); pdf.setTextColor(110,110,110); pdf.text(String(pg.num), PAG.W/2, PAG.H-11, {align:"center"}); }
     });
     if ((maq.paginas.length+1) % 2 === 1) pdf.addPage([PAG.W, PAG.H]); // contraportada en página par
@@ -1338,6 +1460,17 @@ async function exportarPDF(){
   }catch(e){ console.error(e); toast("No pude armar el PDF.", 5000); }
 }
 
+async function aPNG(blob){
+  // La librería de Word guarda las imágenes como PNG; se convierten para que Word las abra sin quejarse.
+  const url = URL.createObjectURL(blob);
+  try{
+    const img = await new Promise((res, rej)=>{ const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const cv = document.createElement("canvas"); cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+    cv.getContext("2d").drawImage(img, 0, 0);
+    const png = await new Promise(res=>cv.toBlob(res, "image/png"));
+    return await png.arrayBuffer();
+  } finally { URL.revokeObjectURL(url); }
+}
 async function exportarDOCX(){
   if (!S) return;
   try{
@@ -1348,11 +1481,23 @@ async function exportarDOCX(){
     if (S.meta.subtitulo) hijos.push(new D.Paragraph({alignment:D.AlignmentType.CENTER, children:[new D.TextRun({text:S.meta.subtitulo, italics:true, size:Math.round(pt*2.2)})]}));
     if (S.meta.autor) hijos.push(new D.Paragraph({alignment:D.AlignmentType.CENTER, spacing:{before:1200}, children:[new D.TextRun({text:S.meta.autor.toUpperCase(), size:Math.round(pt*1.8)})]}));
     if (S.meta.dedicatoria) hijos.push(new D.Paragraph({pageBreakBefore:true, alignment:D.AlignmentType.CENTER, spacing:{before:2400}, children:[new D.TextRun({text:S.meta.dedicatoria, italics:true, size:Math.round(pt*2)})]}));
-    S.caps.forEach(c=>{
+    for (const c of S.caps){
       hijos.push(new D.Paragraph({pageBreakBefore:true, alignment:D.AlignmentType.CENTER, spacing:{before:1800, after:120}, children:[new D.TextRun({text:c.num.toUpperCase(), size:Math.round(pt*1.7), characterSpacing:40})]}));
       hijos.push(new D.Paragraph({heading:D.HeadingLevel.HEADING_1, alignment:D.AlignmentType.CENTER, spacing:{after:600}, children:[new D.TextRun({text:c.titulo||"", bold:true, size:Math.round(pt*3.5), font:"EB Garamond", color:"1A1A1A"})]}));
-      c.ps.forEach((p,i)=>hijos.push(new D.Paragraph({alignment:D.AlignmentType.JUSTIFIED, indent:i?{firstLine:Math.round(0.5*cm)}:undefined, spacing:{line:Math.round(240*1.3), after:0}, children:[new D.TextRun({text:p, size:Math.round(pt*2)})]})));
-    });
+      const fotosDocx = async j => { for (const f of (c.fotos||[]).filter(x=>x.despues===j)){
+        const b = await Fotos.leer(f.id); if (!b) continue;
+        const wpx = Math.round((f.ancho==="medio"?0.62:1) * 106 * 3.78), hpx = Math.round(wpx * (f.h||3)/(f.w||4));
+        const k = Math.min(1, 480/hpx);
+        hijos.push(new D.Paragraph({alignment:D.AlignmentType.CENTER, spacing:{before:160, after:80}, children:[new D.ImageRun({data:await aPNG(b), transformation:{width:Math.round(wpx*k), height:Math.round(hpx*k)}})]}));
+        if (f.pie) hijos.push(new D.Paragraph({alignment:D.AlignmentType.CENTER, spacing:{after:200}, children:[new D.TextRun({text:f.pie, italics:true, size:Math.round(pt*1.7)})]}));
+      } };
+      await fotosDocx(-1);
+      for (let i=0;i<c.ps.length;i++){
+        const p = c.ps[i];
+        hijos.push(new D.Paragraph({alignment:D.AlignmentType.JUSTIFIED, indent:i?{firstLine:Math.round(0.5*cm)}:undefined, spacing:{line:Math.round(240*1.3), after:0}, children:[new D.TextRun({text:p, size:Math.round(pt*2)})]}));
+        await fotosDocx(i);
+      }
+    }
     const doc = new D.Document({
       creator:"Taller Editorial · Sótano Bajo", title:S.meta.titulo,
       styles:{default:{document:{run:{font:"EB Garamond", size:Math.round(pt*2)}}}},
@@ -1409,7 +1554,11 @@ document.addEventListener("click", async e=>{
   }
   if (d.guardarP != null){ const j=+d.guardarP, v = normaliza($("#edit-"+j).value); if (v){ S.caps[capActual].ps[j] = v; guardarCap(capActual); } pintarManuscrito(); pintarNotas(); return; }
   if (d.cancelarP != null) return pintarManuscrito();
-  if (d.borrarP != null){ const j=+d.borrarP, c=S.caps[capActual]; c.ps.splice(j,1); c.sug = c.sug.filter(s=>s.p!==j); c.sug.forEach(s=>{ if (s.p>j) s.p--; }); guardarCap(capActual); pintarLibro(); return; }
+  if (d.borrarP != null){ const j=+d.borrarP, c=S.caps[capActual]; c.sug = c.sug.filter(s=>s.p!==j); quitarParrafo(c, j); guardarCap(capActual); pintarLibro(); return; }
+  if (d.fotoAqui != null){ destinoFoto = {cap:capActual, despues:+d.fotoAqui}; const inp = $("#input-foto"); inp.value = ""; inp.click(); return; }
+  if (d.quitarFoto){ const c = S.caps[capActual]; c.fotos = (c.fotos||[]).filter(f=>f.id!==d.quitarFoto); Fotos.borrar(d.quitarFoto).catch(()=>{}); guardarCap(capActual); MAQUETA=null; pintarManuscrito(); return; }
+  if (d.anchoFoto){ const f = (S.caps[capActual].fotos||[]).find(x=>x.id===d.anchoFoto); if (f){ f.ancho = f.ancho==="medio" ? "completo" : "medio"; guardarCap(capActual); MAQUETA=null; pintarManuscrito(); } return; }
+  if (d.moverFoto){ const [id, dir] = d.moverFoto.split(":"); const c = S.caps[capActual]; const f = (c.fotos||[]).find(x=>x.id===id); if (f){ f.despues = Math.max(-1, Math.min(c.ps.length-1, f.despues + (+dir))); guardarCap(capActual); MAQUETA=null; pintarManuscrito(); requestAnimationFrame(()=>{ const el=document.querySelector(`[data-pie="${id}"]`); el && el.scrollIntoView({block:"center"}); }); } return; }
   switch(t.id){
     case "btn-clave": return abrirClave();
     case "btn-migrar": return migrarDemo();
@@ -1421,9 +1570,14 @@ document.addEventListener("click", async e=>{
     case "btn-portadas": return proponerPortadas();
     case "btn-pdf": return exportarPDF();
     case "btn-docx": return exportarDOCX();
-    case "btn-json": return guardarArchivo(nombreBase()+"-respaldo.json", JSON.stringify(S));
+    case "btn-json": {
+      const fotos = {};
+      for (const c of S.caps) for (const f of (c.fotos||[])) { const du = await Fotos.dataURL(f.id); if (du) fotos[f.id] = du; }
+      return guardarArchivo(nombreBase()+"-respaldo.json", JSON.stringify({version:2, libro:S, fotos}));
+    }
     case "btn-nuevo": {
       if (t.dataset.confirmar !== "1"){ t.dataset.confirmar = "1"; t.textContent = "Sí, borrar el libro"; setTimeout(()=>{ t.dataset.confirmar=""; t.textContent="Borrar y subir otro"; }, 5000); return; }
+      for (const c of S.caps) for (const f of (c.fotos||[])) await Fotos.borrar(f.id).catch(()=>{});
       await Almacen.borrarTodo(S.caps.length); S = null; MAQUETA = null; irA("inicio"); $("#titulo-libro").textContent = "Sótano Bajo"; return;
     }
   }
@@ -1444,22 +1598,25 @@ document.addEventListener("submit", e=>{
 let tCampos = null;
 document.addEventListener("input", e=>{
   const t = e.target; if (!S) return;
+  if (t.dataset.pie){ const f = (S.caps[capActual].fotos||[]).find(x=>x.id===t.dataset.pie); if (f){ f.pie = t.value; guardarCap(capActual); MAQUETA=null; } return; }
   if (t.dataset.reglaId){ const r = S.meta.estilo.find(x=>x.id===t.dataset.reglaId); if (r){ r.texto = t.value; guardarMeta(); } return; }
   const mapa = {"f-titulo":"titulo","f-autor":"autor","f-sub":"subtitulo","f-ded":"dedicatoria"};
   if (mapa[t.id]){
     S.meta[mapa[t.id]] = t.value; guardarMeta();
     document.querySelectorAll(".opcion-portada").forEach(op=>{ const tipo = op.dataset.elegir; const viejo = op.querySelector(".portada"); if (viejo){ const tmp = document.createElement("div"); tmp.innerHTML = portadaHTML(tipo); viejo.replaceWith(tmp.firstElementChild); } });
     if (t.id==="f-titulo") $("#titulo-libro").textContent = t.value;
-    clearTimeout(tCampos); tCampos = setTimeout(async ()=>{ await rehacerMaqueta(); const pg = $("#paginas"); if (pg) pg.innerHTML = pintarPaginasPrevias(14); }, 600);
+    clearTimeout(tCampos); tCampos = setTimeout(async ()=>{ await rehacerMaqueta(); const pg = $("#paginas"); if (pg){ pg.innerHTML = pintarPaginasPrevias(14); pintarFotosVisibles(); } }, 600);
   }
 });
 document.addEventListener("change", async e=>{
   const t = e.target;
   if (t.id === "archivo") return alSubir(t.files[0]);
+  if (t.id === "input-foto") return agregarFoto(t.files[0]);
   if (t.id === "sel-cap"){ capActual = +t.value; pintarLibro(); return; }
   if (t.id === "f-tam"){ S.meta.diseno.tamano = +t.value; guardarMeta(); pintarDiseno(); return; }
   if (t.id === "cargar-respaldo"){
-    try{ const d = JSON.parse(await t.files[0].text()); if (!d.meta || !Array.isArray(d.caps)) throw 0; const viejos = S ? S.caps.length : 0; S = d; if (viejos > S.caps.length) await Almacen.borrarTodo(viejos); guardarTodo(); capActual=0; MAQUETA=null; pintarTodo(); irA("diagnostico"); toast("Respaldo cargado."); }
+    try{ const bruto = JSON.parse(await t.files[0].text()); const d = bruto.libro || bruto; if (!d.meta || !Array.isArray(d.caps)) throw 0;
+      for (const [id, du] of Object.entries(bruto.fotos||{})){ const b = await (await fetch(du)).blob(); await Fotos.guardar(id, b); } const viejos = S ? S.caps.length : 0; S = d; if (viejos > S.caps.length) await Almacen.borrarTodo(viejos); guardarTodo(); capActual=0; MAQUETA=null; pintarTodo(); irA("diagnostico"); toast("Respaldo cargado."); }
     catch(err){ toast("Ese archivo no es un respaldo de esta app.", 5000); }
   }
 });
