@@ -289,6 +289,7 @@ body.demo main{height:calc(100% - 61px - 38px)}
         <label class="btn primario" for="archivo">Elegir archivo</label>
         <input type="file" id="archivo" accept=".docx,.txt,.md" class="oculto">
         <span class="muted" id="msg-carga"></span>
+        <span class="muted" style="font-size:13px">¿Tienes una copia de seguridad? <label class="ref" for="cargar-respaldo-inicio" style="cursor:pointer">Cárgala aquí</label><input type="file" id="cargar-respaldo-inicio" accept=".json" class="oculto"></span>
       </div>
       <ol class="pasos">
         <li><span class="mono">01 · Lectura</span><b>Diagnóstico completo</b><span>Qué funciona, qué se repite, qué suena a máquina.</span></li>
@@ -1368,7 +1369,7 @@ function pintarImprenta(){
     <div class="fila">
       <button class="btn primario" id="btn-pdf">Descargar PDF para imprenta</button>
       <button class="btn" id="btn-docx">Descargar Word (.docx)</button>
-      <button class="btn" id="btn-json">Descargar respaldo</button>
+      <button class="btn" id="btn-json" title="Es un archivo para la app, no se abre en Word">Guardar copia de seguridad</button>
     </div>
     <p class="muted" style="margin:0;font-size:13px">Pide en la imprenta: 14 × 21 cm, interiores en papel bond o cultural de 90 g, portada en couché de 300 g con laminado mate, encuadernación rústica (pegado).</p>
   </div>
@@ -1616,7 +1617,7 @@ document.addEventListener("change", async e=>{
   if (t.id === "input-foto") return agregarFoto(t.files[0]);
   if (t.id === "sel-cap"){ capActual = +t.value; pintarLibro(); return; }
   if (t.id === "f-tam"){ S.meta.diseno.tamano = +t.value; guardarMeta(); pintarDiseno(); return; }
-  if (t.id === "cargar-respaldo"){
+  if (t.id === "cargar-respaldo" || t.id === "cargar-respaldo-inicio"){
     try{ const bruto = JSON.parse(await t.files[0].text()); const d = bruto.libro || bruto; if (!d.meta || !Array.isArray(d.caps)) throw 0;
       for (const [id, du] of Object.entries(bruto.fotos||{})){ const b = await (await fetch(du)).blob(); await Fotos.guardar(id, b); } const viejos = S ? S.caps.length : 0; S = d; if (viejos > S.caps.length) await Almacen.borrarTodo(viejos); guardarTodo(); capActual=0; MAQUETA=null; pintarTodo(); irA("diagnostico"); toast("Respaldo cargado."); }
     catch(err){ toast("Ese archivo no es un respaldo de esta app.", 5000); }
