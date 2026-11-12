@@ -1385,6 +1385,7 @@ async function guardarArchivo(nombre, datos){
     const a = document.createElement("a"); a.href = url; a.download = nombre; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url), 5000);
     if (window.__descargas) window.__descargas[nombre] = blob;
+    toast(`Listo: se guardó en tu carpeta "Descargas" como «${nombre}». Si te sale una ventanita, elige "Guardar" (no hace falta abrirlo).`, 9000);
   }catch(e){ toast("No se pudo descargar el archivo. Intenta de nuevo.", 5000); }
 }
 function nombreBase(){ return (S.meta.titulo||"libro").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^\w]+/g,"-").replace(/^-|-$/g,"").toLowerCase().slice(0,60) || "libro"; }
@@ -1573,7 +1574,8 @@ document.addEventListener("click", async e=>{
     case "btn-json": {
       const fotos = {};
       for (const c of S.caps) for (const f of (c.fotos||[])) { const du = await Fotos.dataURL(f.id); if (du) fotos[f.id] = du; }
-      return guardarArchivo(nombreBase()+"-respaldo.json", JSON.stringify({version:2, libro:S, fotos}));
+      const hoy = new Date().toISOString().slice(0,10);
+      return guardarArchivo(`respaldo-${nombreBase()}-${hoy}.json`, JSON.stringify({version:2, libro:S, fotos}));
     }
     case "btn-nuevo": {
       if (t.dataset.confirmar !== "1"){ t.dataset.confirmar = "1"; t.textContent = "Sí, borrar el libro"; setTimeout(()=>{ t.dataset.confirmar=""; t.textContent="Borrar y subir otro"; }, 5000); return; }
